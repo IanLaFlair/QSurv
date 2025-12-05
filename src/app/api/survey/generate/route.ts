@@ -1,39 +1,57 @@
 import { NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
     try {
-        const { prompt } = await request.json();
+        const { prompt } = await req.json();
 
-        // Simulate AI processing delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Mock AI Logic: Return different questions based on keywords, or generic ones
-        let questions = [];
-
-        if (prompt.toLowerCase().includes("crypto") || prompt.toLowerCase().includes("token")) {
-            questions = [
-                { text: "Which crypto exchange do you use most frequently?", type: "text" },
-                { text: "What is your biggest pain point with current wallets?", type: "text" },
-                { text: "How likely are you to recommend Qubic to a friend?", type: "rating" }
-            ];
-        } else if (prompt.toLowerCase().includes("product") || prompt.toLowerCase().includes("feedback")) {
-            questions = [
-                { text: "What feature do you value most in our product?", type: "text" },
-                { text: "How would you rate the ease of use?", type: "rating" },
-                { text: "What improvements would you suggest for the next version?", type: "text" }
-            ];
-        } else {
-            // Generic fallback
-            questions = [
-                { text: `What are your thoughts on ${prompt}?`, type: "text" },
-                { text: "How does this impact your daily routine?", type: "text" },
-                { text: "Would you pay for a solution like this?", type: "text" }
-            ];
+        if (!prompt) {
+            return NextResponse.json({ success: false, error: "Prompt is required" }, { status: 400 });
         }
 
-        return NextResponse.json({ success: true, questions });
+        const apiKey = process.env.GEMINI_API_KEY;
+
+        if (!apiKey) {
+            return NextResponse.json({ success: false, error: "Gemini API Key not configured" }, { status: 500 });
+        }
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+        const systemPrompt = `
+      You are an expert survey creator. 
+      Generate a survey based on the user's topic: "${prompt}".
+      
+      Return ONLY a valid JSON object with this exact structure:
+      {
+        "title": "Catchy Survey Title",
+        "description": "A short, engaging description of the survey.",
+        "questions": [
+          { "text": "Question 1?", "type": "text" },
+          { "text": "Question 2?", "type": "text" },
+          { "text": "Question 3?", "type": "text" }
+        ]
+      }
+      Generate 3-5 high-quality questions.
+    `;
+
+        const result = await model.generateContent(systemPrompt);
+        const response = await result.response;
+        const text = response.text();
+
+        // Clean up markdown code blocks if present
+        const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
+        const data = JSON.parse(jsonStr);
+
+        return NextResponse.json({
+            success: true,
+            title: data.title,
+            description: data.description,
+            questions: data.questions
+        });
 
     } catch (error) {
-        return NextResponse.json({ success: false, error: "Failed to generate questions" }, { status: 500 });
+        console.error("AI Generation Error:", error);
+        return NextResponse.json({ success: false, error: "Failed to generate survey" }, { status: 500 });
     }
 }

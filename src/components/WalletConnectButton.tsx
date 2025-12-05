@@ -15,7 +15,7 @@ export default function WalletConnectButton() {
     if (address) {
       navigator.clipboard.writeText(address);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), 3000);
     }
   };
 
@@ -56,7 +56,7 @@ export default function WalletConnectButton() {
         </div>
         
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-black font-bold text-xs">
+          <div className="w-8 h-8 rounded-full bg-[#00f0ff] flex items-center justify-center text-black font-bold text-xs shadow-lg shadow-[#00f0ff]/20">
             {address?.slice(0, 2)}
           </div>
           <ChevronDown className={`w-4 h-4 text-gray-400 transition ${isOpen ? "rotate-180" : ""}`} />
@@ -77,12 +77,12 @@ export default function WalletConnectButton() {
             
             <div className="bg-white/5 rounded-lg p-3 mb-4 border border-white/5 group relative">
               <div className="text-xs text-gray-500 mb-1">Address</div>
-              <div className="font-mono text-sm text-white break-all leading-tight">
+              <div className="font-mono text-sm text-white break-all leading-tight pr-6">
                 {address}
               </div>
               <button 
                 onClick={handleCopy}
-                className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-primary text-gray-400 hover:text-black rounded transition"
+                className="absolute top-2 right-2 p-1.5 bg-white/10 hover:bg-primary text-gray-300 hover:text-black rounded-md transition"
                 title="Copy Address"
               >
                 {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
@@ -101,6 +101,14 @@ export default function WalletConnectButton() {
             </button>
           </div>
         </>
+      )}
+
+      {/* Toast Notification */}
+      {copied && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] bg-white text-black px-4 py-2 rounded-full shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <Check className="w-4 h-4 text-green-600" />
+          <span className="text-sm font-bold">Wallet Address Copied</span>
+        </div>
       )}
     </div>
   );

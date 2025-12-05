@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, DollarSign, Users, Save } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, Trash2, DollarSign, Users, Save, Loader2 } from "lucide-react";
+import { useWallet } from "@/components/providers/WalletProvider";
 
 export default function CreateSurveyPage() {
+  const router = useRouter();
+  const { address, isConnected } = useWallet();
   const [questions, setQuestions] = useState([{ id: 1, text: "", type: "text" }]);
   const [rewardPool, setRewardPool] = useState(1000);
   const [totalRespondents, setTotalRespondents] = useState(10);
@@ -11,6 +15,7 @@ export default function CreateSurveyPage() {
   // Form State
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [isDeploying, setIsDeploying] = useState(false);
 
   // AI Generator State
   const [mode, setMode] = useState<"manual" | "ai">("manual");
@@ -37,9 +42,12 @@ export default function CreateSurveyPage() {
         }));
         setQuestions(newQuestions);
         setMode("manual"); // Switch back to view results
+      } else {
+        alert("AI Generation Failed: " + data.error);
       }
     } catch (error) {
-      alert("Failed to generate questions");
+      console.error(error);
+      alert("Failed to generate questions. Check console for details.");
     } finally {
       setIsGenerating(false);
     }
@@ -51,6 +59,48 @@ export default function CreateSurveyPage() {
 
   const removeQuestion = (id: number) => {
     setQuestions(questions.filter(q => q.id !== id));
+  };
+
+  const handleDeploy = async () => {
+    if (!isConnected || !address) {
+      alert("Please connect your wallet first!");
+      return;
+    }
+    if (!title || !description) {
+      alert("Please fill in the title and description.");
+      return;
+    }
+
+    setIsDeploying(true);
+    try {
+      const res = await fetch("/api/survey/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          description,
+          questions,
+          rewardPool,
+          maxRespondents: totalRespondents,
+          creatorAddress: address,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        // Simulate Smart Contract Call
+        const ipfsMsg = data.ipfsHash ? `\n\n🌍 IPFS Hash: ${data.ipfsHash}` : "";
+        alert(`Survey Created! ID: ${data.survey.id}${ipfsMsg}\n\n(Simulated) Locked ${rewardPool} QUs in Smart Contract.`);
+        router.push("/dashboard");
+      } else {
+        alert("Failed to create survey: " + data.error);
+      }
+    } catch (error: any) {
+      console.error("Deploy Error:", error);
+      alert("An error occurred: " + (error.message || JSON.stringify(error)));
+    } finally {
+      setIsDeploying(false);
+    }
   };
 
   const rewardPerRespondent = totalRespondents > 0 ? rewardPool / totalRespondents : 0;
@@ -223,17 +273,15 @@ export default function CreateSurveyPage() {
             </div>
 
             <button 
-              onClick={() => {
-                alert(`Simulating Smart Contract Call...\n\nLocking ${rewardPool} QUs for ${totalRespondents} respondents.\n\nSurvey Deployed Successfully!`);
-                window.location.href = "/dashboard";
-              }}
-              className="w-full py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl hover:opacity-90 transition shadow-lg shadow-primary/20 flex items-center justify-center gap-2 cursor-pointer"
+              onClick={handleDeploy}
+              disabled={isDeploying}
+              className="w-full py-3 bg-gradient-to-r from-[var(--primary)] to-cyan-500 text-black font-bold text-sm uppercase tracking-wider rounded-lg hover:opacity-90 transition shadow-[0_0_20px_rgba(0,240,255,0.3)] hover:shadow-[0_0_30px_rgba(0,240,255,0.5)] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              <Save className="w-5 h-5" />
-              Deploy Survey
+              {isDeploying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {isDeploying ? "Deploying..." : "Deploy Survey"}
             </button>
-            <p className="text-xs text-center text-gray-500">
-              This will lock {rewardPool.toLocaleString()} QUs in the Smart Contract.
+            <p className="text-xs text-center text-gray-500 font-mono">
+              Gas Fee: ~0.0001 QUBIC • Locks {rewardPool.toLocaleString()} QUs
             </p>
           </div>
         </div>

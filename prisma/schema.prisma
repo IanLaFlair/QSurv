@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Survey {
+  id              String     @id @default(cuid())
+  title           String
+  description     String
+  ipfsHash        String?    // Stores the IPFS CID from Pinata
+  creatorAddress  String
+  rewardPool      Float
+  maxRespondents  Int
+  rewardPerRespondent Float
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  
+  questions       Question[]
+  responses       Response[]
+}
+
+model Question {
+  id        String   @id @default(cuid())
+  text      String
+  type      String   @default("text") // text, multiple_choice, etc.
+  surveyId  String
+  survey    Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+}
+
+model Response {
+  id                String   @id @default(cuid())
+  surveyId          String
+  respondentAddress String
+  answers           String   // Stored as JSON string for simplicity
+  aiScore           Float?   // 0.0 to 1.0
+  aiFeedback        String?
+  isApproved        Boolean  @default(false)
+  payoutTxHash      String?
+  payoutStatus      String   @default("pending") // pending, paid, rejected
+  createdAt         DateTime @default(now())
+  
+  survey            Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+}
