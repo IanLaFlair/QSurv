@@ -5,6 +5,8 @@ import { useWallet } from "@/components/providers/WalletProvider";
 import { Loader2, CheckCircle2, XCircle, Wallet, Send } from "lucide-react";
 import WalletConnectButton from "@/components/WalletConnectButton";
 import Modal from "@/components/Modal";
+import ReferralBanner from "@/components/ReferralBanner";
+import ReferralSuccessModal from "@/components/ReferralSuccessModal";
 
 interface Question {
   id: string;
@@ -35,6 +37,8 @@ export default function PublicSurveyPage({ params }: { params: Promise<{ id: str
     message: "",
     type: "default"
   });
+
+  const [showReferralModal, setShowReferralModal] = useState(false);
 
   const showModal = (title: string, message: string, type: "default" | "error" | "success" = "default") => {
     setModal({ isOpen: true, title, message, type });
@@ -99,6 +103,11 @@ export default function PublicSurveyPage({ params }: { params: Promise<{ id: str
       }
 
       setResult(data);
+      
+      // Show referral modal on success
+      if (data.success) {
+        setTimeout(() => setShowReferralModal(true), 500);
+      }
 
     } catch (error) {
       console.error("Submission error", error);
@@ -166,6 +175,18 @@ export default function PublicSurveyPage({ params }: { params: Promise<{ id: str
         {modal.message}
       </Modal>
 
+      {/* Referral Success Modal */}
+      {address && survey && (
+        <ReferralSuccessModal
+          isOpen={showReferralModal}
+          onClose={() => setShowReferralModal(false)}
+          surveyId={id}
+          walletAddress={address}
+          baseReward={survey.rewardPerRespondent * 0.6} // 60% of total
+          referralCode={`QSURV-${id.slice(0, 4)}-${address.slice(0, 6)}`}
+        />
+      )}
+
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl">
         {/* Background Gradient */}
@@ -197,6 +218,13 @@ export default function PublicSurveyPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
       </div>
+
+      {/* Referral Banner */}
+      <ReferralBanner 
+        surveyId={id}
+        walletAddress={address}
+        isConnected={isConnected}
+      />
 
       {/* Questions */}
       <div className="space-y-6">

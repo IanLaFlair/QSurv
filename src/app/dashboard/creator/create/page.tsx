@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, DollarSign, Users, Save, Loader2 } from "lucide-react";
 import { useWallet } from "@/components/providers/WalletProvider";
+import ReferralFlowModal from "@/components/ReferralFlowModal";
 
 export default function CreateSurveyPage() {
   const router = useRouter();
@@ -21,6 +22,9 @@ export default function CreateSurveyPage() {
   const [mode, setMode] = useState<"manual" | "ai">("manual");
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Referral Modal State
+  const [showReferralModal, setShowReferralModal] = useState(false);
 
   const generateQuestions = async () => {
     if (!prompt) return;
@@ -107,6 +111,13 @@ export default function CreateSurveyPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
+      {/* Referral Flow Modal */}
+      <ReferralFlowModal
+        isOpen={showReferralModal}
+        onClose={() => setShowReferralModal(false)}
+        rewardPerRespondent={rewardPerRespondent}
+      />
+      
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold mb-2">Create New Survey</h1>
@@ -264,11 +275,96 @@ export default function CreateSurveyPage() {
                 </div>
               </div>
 
-              <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
-                <div className="text-sm text-gray-400 mb-1">Reward per Respondent</div>
-                <div className="text-2xl font-bold text-primary font-mono">
-                  {rewardPerRespondent.toLocaleString()} QUs
+              {/* Reward Breakdown - Expandable */}
+              <div className="p-5 bg-gradient-to-br from-primary/10 via-purple-500/5 to-secondary/10 rounded-xl border border-primary/20 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-400">Per Response Allocation</div>
+                  <div className="text-2xl font-bold text-primary font-mono">
+                    {rewardPerRespondent.toLocaleString()} QUs
+                  </div>
                 </div>
+
+                {/* Expandable Breakdown */}
+                <details className="group">
+                  <summary className="cursor-pointer list-none">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition border border-white/10">
+                      <span className="text-sm font-medium text-gray-300">💡 View Breakdown</span>
+                      <svg className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </summary>
+
+                  {/* Breakdown Content */}
+                  <div className="mt-3 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    {/* Respondent */}
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                        <span className="text-sm text-gray-300">Respondent</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-white">
+                          {(rewardPerRespondent * 0.6).toFixed(0)} QUs
+                        </div>
+                        <div className="text-xs text-blue-400">60%</div>
+                      </div>
+                    </div>
+
+                    {/* L1 Referrer */}
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-purple-400"></div>
+                        <span className="text-sm text-gray-300">L1 Referrer</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-white">
+                          {(rewardPerRespondent * 0.25).toFixed(0)} QUs
+                        </div>
+                        <div className="text-xs text-purple-400">25%</div>
+                      </div>
+                    </div>
+
+                    {/* L2 Referrer */}
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-pink-500/10 border border-pink-500/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-pink-400"></div>
+                        <span className="text-sm text-gray-300">L2 Referrer</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-white">
+                          {(rewardPerRespondent * 0.1).toFixed(0)} QUs
+                        </div>
+                        <div className="text-xs text-pink-400">10%</div>
+                      </div>
+                    </div>
+
+                    {/* Platform Fee */}
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-gray-500/10 border border-gray-500/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                        <span className="text-sm text-gray-300">Platform Fee</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-white">
+                          {(rewardPerRespondent * 0.05).toFixed(0)} QUs
+                        </div>
+                        <div className="text-xs text-gray-400">5%</div>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+
+                {/* How it Works Button */}
+                <button
+                  onClick={() => setShowReferralModal(true)}
+                  className="w-full p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/30 transition text-sm font-medium text-gray-300 hover:text-primary flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  How it Works
+                </button>
               </div>
             </div>
 
