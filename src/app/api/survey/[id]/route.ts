@@ -16,6 +16,9 @@ export async function GET(
             where: { id },
             include: {
                 questions: true,
+                responses: {
+                    orderBy: { createdAt: 'desc' }
+                },
                 _count: {
                     select: { responses: true },
                 },

@@ -1,16 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, Home, LayoutGrid, PlusCircle, Settings, User } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { BarChart3, Home, LayoutGrid, PlusCircle, User } from "lucide-react";
 import WalletConnectButton from "@/components/WalletConnectButton";
+import Modal from "@/components/Modal";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const [showFeatureModal, setShowFeatureModal] = useState(false);
+
+  const handleFeatureClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowFeatureModal(true);
+  };
+
   return (
     <div className="min-h-screen bg-black flex">
+      <Modal
+        isOpen={showFeatureModal}
+        onClose={() => setShowFeatureModal(false)}
+        title="Coming Soon"
+        type="default"
+      >
+        This feature is currently under development. Stay tuned for updates!
+      </Modal>
+
       {/* Sidebar */}
       <aside className="w-64 border-r border-white/10 bg-black/50 backdrop-blur-xl flex flex-col fixed h-full z-20">
         <div className="p-6 border-b border-white/10">
@@ -21,16 +41,37 @@ export default function DashboardLayout({
         </div>
         
         <nav className="flex-1 p-4 space-y-2">
-          <NavItem href="/dashboard" icon={<Home className="w-5 h-5" />} label="Overview" active />
-          <NavItem href="/dashboard/creator/create" icon={<PlusCircle className="w-5 h-5" />} label="Create Survey" />
-          <NavItem href="/dashboard/creator" icon={<LayoutGrid className="w-5 h-5" />} label="My Surveys" />
-          <NavItem href="/dashboard/respondent" icon={<User className="w-5 h-5" />} label="Earn Rewards" />
-          <NavItem href="/dashboard/analytics" icon={<BarChart3 className="w-5 h-5" />} label="Analytics" />
+          <NavItem 
+            href="/dashboard" 
+            icon={<Home className="w-5 h-5" />} 
+            label="Overview" 
+            active={pathname === "/dashboard"} 
+          />
+          <NavItem 
+            href="/dashboard/creator/create" 
+            icon={<PlusCircle className="w-5 h-5" />} 
+            label="Create Survey" 
+            active={pathname === "/dashboard/creator/create"} 
+          />
+          <NavItem 
+            href="/dashboard/creator" 
+            icon={<LayoutGrid className="w-5 h-5" />} 
+            label="My Surveys" 
+            active={pathname === "/dashboard/creator" || (pathname.startsWith("/dashboard/creator/") && pathname !== "/dashboard/creator/create")} 
+          />
+          <NavItem 
+            href="#" 
+            icon={<User className="w-5 h-5" />} 
+            label="Earn Rewards" 
+            onClick={handleFeatureClick}
+          />
+          <NavItem 
+            href="#" 
+            icon={<BarChart3 className="w-5 h-5" />} 
+            label="Analytics" 
+            onClick={handleFeatureClick}
+          />
         </nav>
-
-        <div className="p-4 border-t border-white/10">
-          <NavItem href="/settings" icon={<Settings className="w-5 h-5" />} label="Settings" />
-        </div>
       </aside>
 
       {/* Main Content */}
@@ -49,10 +90,23 @@ export default function DashboardLayout({
   );
 }
 
-function NavItem({ href, icon, label, active = false }: { href: string; icon: React.ReactNode; label: string; active?: boolean }) {
+function NavItem({ 
+  href, 
+  icon, 
+  label, 
+  active = false,
+  onClick
+}: { 
+  href: string; 
+  icon: React.ReactNode; 
+  label: string; 
+  active?: boolean;
+  onClick?: (e: React.MouseEvent) => void;
+}) {
   return (
     <Link 
       href={href} 
+      onClick={onClick}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
         active 
           ? "bg-primary/10 text-primary border border-primary/20" 

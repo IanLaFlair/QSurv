@@ -1,14 +1,25 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { ArrowLeft, Copy, Check, ExternalLink, Users, DollarSign, Globe } from "lucide-react";
+import { ArrowLeft, Copy, Check, ExternalLink, Users, DollarSign, Globe, Eye } from "lucide-react";
 import Link from "next/link";
 import { useWallet } from "@/components/providers/WalletProvider";
+import Modal from "@/components/Modal";
 
 interface Question {
   id: string;
   text: string;
   type: string;
+}
+
+interface Response {
+  id: string;
+  walletAddress: string;
+  answers: any;
+  aiScore: number;
+  isApproved: boolean;
+  payoutTxHash?: string;
+  createdAt: string;
 }
 
 interface Survey {
@@ -21,6 +32,7 @@ interface Survey {
   rewardPerRespondent: number;
   createdAt: string;
   questions: Question[];
+  responses: Response[];
   _count: {
     responses: number;
   };
@@ -34,6 +46,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [selectedResponse, setSelectedResponse] = useState<Response | null>(null);
 
   useEffect(() => {
     async function fetchSurvey() {
@@ -71,20 +84,60 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
   const shareLink = typeof window !== 'undefined' ? `${window.location.origin}/survey/${id}` : '';
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8 pb-20">
+      <Modal
+        isOpen={!!selectedResponse}
+        onClose={() => setSelectedResponse(null)}
+        title="Respondent Answers"
+        type="default"
+      >
+        {selectedResponse && (
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="bg-white/5 p-3 rounded-lg border border-white/10">
+              <div className="text-xs text-gray-500 mb-1">Wallet Address</div>
+              <div className="font-mono text-xs text-gray-300 break-all">{selectedResponse.walletAddress}</div>
+            </div>
+            
+            <div className="space-y-3">
+              {Array.isArray(selectedResponse.answers) ? selectedResponse.answers.map((ans: any, idx: number) => (
+                <div key={idx} className="bg-black/30 p-3 rounded-lg border border-white/5">
+                  <div className="text-xs text-gray-500 mb-1">Q{idx + 1}: {ans.question}</div>
+                  <div className="text-sm text-white">{ans.answer}</div>
+                </div>
+              )) : (
+                <div className="text-gray-400 italic">No detailed answers available.</div>
+              )}
+            </div>
+
+            <div className="flex justify-between items-center pt-2 border-t border-white/10">
+              <div className="text-sm text-gray-400">AI Score</div>
+              <div className={`text-lg font-bold ${selectedResponse.isApproved ? "text-green-500" : "text-red-500"}`}>
+                {selectedResponse.aiScore}/10
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
       {/* Header */}
       <div>
-        <Link href="/dashboard" className="text-gray-400 hover:text-white flex items-center gap-2 mb-4 transition">
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+        <Link href="/dashboard/creator" className="text-gray-400 hover:text-white flex items-center gap-2 mb-4 transition">
+          <ArrowLeft className="w-4 h-4" /> Back to My Surveys
         </Link>
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold mb-2">{survey.title}</h1>
             <p className="text-gray-400 max-w-2xl">{survey.description}</p>
           </div>
-          <div className="flex items-center gap-2 bg-green-500/10 text-green-500 px-3 py-1 rounded-full text-sm font-medium border border-green-500/20">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            Active
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border ${
+            survey._count.responses < survey.maxRespondents 
+              ? "bg-green-500/10 text-green-500 border-green-500/20" 
+              : "bg-gray-500/10 text-gray-500 border-gray-500/20"
+          }`}>
+            <div className={`w-2 h-2 rounded-full animate-pulse ${
+              survey._count.responses < survey.maxRespondents ? "bg-green-500" : "bg-gray-500"
+            }`} />
+            {survey._count.responses < survey.maxRespondents ? "Active" : "Completed"}
           </div>
         </div>
       </div>
@@ -160,6 +213,75 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             {copied ? "Copied!" : "Copy Link"}
           </button>
+        </div>
+      </div>
+
+      {/* Respondents Table */}
+      <div className="glass-panel p-6 rounded-xl">
+        <h3 className="text-lg font-bold mb-4">Respondents</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-white/10 text-gray-400 text-sm">
+                <th className="py-3 px-4">Wallet Address</th>
+                <th className="py-3 px-4">Date</th>
+                <th className="py-3 px-4">AI Score</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4">Payout Tx</th>
+                <th className="py-3 px-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              {survey.responses && survey.responses.length > 0 ? (
+                survey.responses.map((resp) => (
+                  <tr key={resp.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                    <td className="py-3 px-4 font-mono text-xs text-gray-300">
+                      {resp.walletAddress.slice(0, 6)}...{resp.walletAddress.slice(-6)}
+                    </td>
+                    <td className="py-3 px-4 text-gray-400">
+                      {new Date(resp.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`font-bold ${resp.aiScore >= 7 ? "text-green-500" : resp.aiScore >= 5 ? "text-yellow-500" : "text-red-500"}`}>
+                        {resp.aiScore}/10
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      {resp.isApproved ? (
+                        <span className="inline-flex items-center gap-1 text-green-500 text-xs bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">
+                          <Check className="w-3 h-3" /> Approved
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-red-500 text-xs bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">
+                          Rejected
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 font-mono text-xs text-gray-500">
+                      {resp.payoutTxHash ? (
+                        <span className="text-primary">{resp.payoutTxHash.slice(0, 8)}...</span>
+                      ) : "-"}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button 
+                        onClick={() => setSelectedResponse(resp)}
+                        className="p-2 hover:bg-white/10 rounded-lg transition text-gray-400 hover:text-white"
+                        title="View Answers"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-gray-500 italic">
+                    No responses yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
