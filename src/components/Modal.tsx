@@ -33,7 +33,7 @@ export default function Modal({ isOpen, onClose, title, children, type = "defaul
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
-        className={`relative w-full max-w-md bg-[#0a0a0a] border ${borderColor} rounded-2xl p-6 ${glowColor} animate-in zoom-in-95 duration-200`}
+        className={`relative w-full max-w-2xl bg-[#0a0a0a] border ${borderColor} rounded-2xl p-6 ${glowColor} animate-in zoom-in-95 duration-200`}
       >
         <button 
           onClick={onClose}

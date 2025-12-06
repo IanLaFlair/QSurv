@@ -38,6 +38,22 @@ export default function WalletProvider({ children }: { children: React.ReactNode
       setIsConnected(true);
       setBalance(0); // Balance fetching would require another API call
     }
+
+    // Listen for MetaMask account changes
+    if ((window as any).ethereum) {
+      (window as any).ethereum.on('accountsChanged', () => {
+        // When user switches accounts in MetaMask, disconnect to force re-login
+        // This ensures they get the correct Qubic address if the Snap supports it,
+        // or at least clears the confusing state.
+        disconnect();
+      });
+    }
+
+    return () => {
+      if ((window as any).ethereum) {
+        (window as any).ethereum.removeListener('accountsChanged', disconnect);
+      }
+    };
   }, []);
 
   const connect = async () => {

@@ -29,7 +29,15 @@ export async function GET(
             return NextResponse.json({ success: false, error: "Survey not found" }, { status: 404 });
         }
 
-        return NextResponse.json({ success: true, survey });
+        const formattedSurvey = {
+            ...survey,
+            responses: survey.responses.map(r => ({
+                ...r,
+                answers: JSON.parse(r.answers)
+            }))
+        };
+
+        return NextResponse.json({ success: true, survey: formattedSurvey });
     } catch (error) {
         console.error("Error fetching survey:", error);
         return NextResponse.json({ success: false, error: "Failed to fetch survey" }, { status: 500 });

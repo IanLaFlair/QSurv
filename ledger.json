@@ -1,7 +1,7 @@
 {
   "surveys": {
     "cmit05qp30000lfa2qsqb042g": {
-      "balance": 900,
+      "balance": 800,
       "isActive": true,
       "transactions": [
         {
@@ -19,6 +19,14 @@
           "timestamp": "2025-12-05T15:13:33.490Z",
           "from": "QSURV_CONTRACT_ADDRESS",
           "to": "CNSRAYCEDNDVUGNNXYXRZKNTSSGAOHGCIEUREAMZNFEDMPLFNRQMHOBFIZBC"
+        },
+        {
+          "hash": "2f9d8152c8ca26194d9e8c117eb671849a17c545f928650c6cab2b399c9e",
+          "type": "PAYOUT",
+          "amount": 100,
+          "timestamp": "2025-12-06T05:03:21.204Z",
+          "from": "QSURV_CONTRACT_ADDRESS",
+          "to": "ZBMDYCEILFTMSERCWDOZALXCYWOAIQHHYWZYYVVWJFYNLGWQDKYTSZLDDYZI"
         }
       ]
     }

@@ -14,9 +14,10 @@ interface Question {
 
 interface Response {
   id: string;
-  walletAddress: string;
+  respondentAddress: string;
   answers: any;
   aiScore: number;
+  aiFeedback: string;
   isApproved: boolean;
   payoutTxHash?: string;
   createdAt: string;
@@ -95,7 +96,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
             <div className="bg-white/5 p-3 rounded-lg border border-white/10">
               <div className="text-xs text-gray-500 mb-1">Wallet Address</div>
-              <div className="font-mono text-xs text-gray-300 break-all">{selectedResponse.walletAddress}</div>
+              <div className="font-mono text-xs text-gray-300 break-all">{selectedResponse.respondentAddress}</div>
             </div>
             
             <div className="space-y-3">
@@ -115,6 +116,13 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                 {selectedResponse.aiScore}/10
               </div>
             </div>
+
+            {selectedResponse.aiFeedback && (
+              <div className="bg-white/5 p-3 rounded-lg border border-white/10 mt-2">
+                <div className="text-xs text-gray-500 mb-1">AI Feedback</div>
+                <div className="text-sm text-gray-300 italic">"{selectedResponse.aiFeedback}"</div>
+              </div>
+            )}
           </div>
         )}
       </Modal>
@@ -236,7 +244,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                 survey.responses.map((resp) => (
                   <tr key={resp.id} className="border-b border-white/5 hover:bg-white/5 transition">
                     <td className="py-3 px-4 font-mono text-xs text-gray-300">
-                      {resp.walletAddress.slice(0, 6)}...{resp.walletAddress.slice(-6)}
+                      {resp.respondentAddress.slice(0, 6)}...{resp.respondentAddress.slice(-6)}
                     </td>
                     <td className="py-3 px-4 text-gray-400">
                       {new Date(resp.createdAt).toLocaleDateString()}

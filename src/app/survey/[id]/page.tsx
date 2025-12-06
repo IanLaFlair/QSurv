@@ -22,7 +22,7 @@ interface Survey {
 
 export default function PublicSurveyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { address, isConnected, connect } = useWallet();
+  const { address, isConnected, connect, disconnect } = useWallet();
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [loading, setLoading] = useState(true);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -226,17 +226,25 @@ export default function PublicSurveyPage({ params }: { params: Promise<{ id: str
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black/90 to-transparent z-50">
         <div className="max-w-3xl mx-auto">
           <div className="glass-panel p-4 rounded-2xl flex items-center justify-between shadow-[0_0_50px_rgba(0,0,0,0.5)] border-primary/20 bg-[#0a0a0a]/90 backdrop-blur-xl">
-            <div className="flex items-center gap-4 pl-2">
-              {!isConnected ? (
-                <div className="text-yellow-500 flex items-center gap-2 text-sm font-medium">
-                  <Wallet className="w-4 h-4" /> Connect wallet to submit
-                </div>
-              ) : (
-                <div className="text-green-500 flex items-center gap-2 text-sm font-medium">
-                  <CheckCircle2 className="w-4 h-4" /> Wallet Connected
-                </div>
-              )}
-            </div>
+              <div className="flex items-center gap-4 pl-2">
+                {!isConnected ? (
+                  <div className="text-yellow-500 flex items-center gap-2 text-sm font-medium">
+                    <Wallet className="w-4 h-4" /> Connect wallet to submit
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="text-green-500 flex items-center gap-2 text-sm font-medium">
+                      <CheckCircle2 className="w-4 h-4" /> Wallet Connected: <span className="font-mono text-xs text-green-400">{address?.slice(0, 6)}...{address?.slice(-6)}</span>
+                    </div>
+                    <button 
+                      onClick={disconnect}
+                      className="text-xs text-red-500 hover:text-red-400 underline"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                )}
+              </div>
 
             {!isConnected ? (
               <WalletConnectButton />
