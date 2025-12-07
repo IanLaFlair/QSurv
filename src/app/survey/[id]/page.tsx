@@ -160,7 +160,7 @@ export default function PublicSurveyPage({ params }: { params: Promise<{ id: str
                   </div>
                   <div className="flex items-center justify-between text-sm mt-1">
                     <span className="text-purple-400 flex items-center gap-1"><Award className="w-3 h-3" /> Staking Bonus</span>
-                    <span className="text-purple-400 font-mono">+{result.bonus.toLocaleString()} QUs</span>
+                    <span className="text-purple-400 font-mono">+{(result.bonus || 0).toLocaleString()} QUs</span>
                   </div>
                 </div>
               )}

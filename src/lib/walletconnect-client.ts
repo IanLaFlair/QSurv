@@ -65,6 +65,7 @@ export async function waitForSessionApproval(approval: () => Promise<SessionType
                     method: 'qubic_requestAccounts',
                     params: {},
                 },
+                chainId: 'qubic:1',
             });
 
             console.log('qubic_requestAccounts response:', accounts);
@@ -172,6 +173,7 @@ export async function callQubicMethod(method: string, params: any) {
             method,
             params,
         },
+        chainId: 'qubic:1',
     });
 
     return result;

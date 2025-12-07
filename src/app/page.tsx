@@ -28,7 +28,7 @@ export default function Home() {
           <Link href="#" className="hover:text-primary transition">Docs</Link>
         </nav>
         <button 
-          onClick={connect}
+          onClick={() => connect("metamask")}
           className="px-5 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-sm font-medium transition flex items-center gap-2 cursor-pointer"
         >
           <Wallet className="w-4 h-4" />

@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
         if (action === "STAKE") {
             const result = await qubicSimulation.stakeFunds(address, Number(amount));
-            return NextResponse.json({ success: true, ...result });
+            return NextResponse.json({ ...result });
         }
 
         return NextResponse.json({ error: "Invalid action" }, { status: 400 });
