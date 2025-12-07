@@ -10,6 +10,8 @@ QSurv is a decentralized, trustless survey platform built on the **Qubic Network
 
 -   **Trustless Rewards**: Creators lock funds in a Smart Contract; respondents get paid *instantly* upon verification.
 -   **AI Verification**: Google Gemini 2.0 Flash analyzes every answer for quality and relevance. No more spam!
+-   **Viral Referral System**: Users earn a **25% commission** for every valid response driven through their unique referral link.
+-   **Staking Multipliers**: Respondents can stake QUs to unlock "Analyst" or "Oracle" tiers, earning up to **25% bonus rewards** on every survey.
 -   **Decentralized Storage**: Survey data is pinned to **IPFS** (via Pinata) for censorship resistance.
 -   **Qubic Wallet Integration**: Seamless login using **MetaMask Snap** for Qubic.
 -   **Qubic Testnet Integration**: Fully integrated with the Qubic Testnet for locking funds and processing payouts, delivering a "Mainnet-like" experience with instant finality.
@@ -87,7 +89,7 @@ Open [http://localhost:3000](http://localhost:3000) to launch the app.
     -   If approved, you'll see a **"Payout Transaction"** hash instantly!
 
 ## 📂 Project Structure
--   `/contracts`: The actual C++ Smart Contract code (`QSurv.cpp`) ready for Qubic Mainnet.
+-   `/contracts`: The actual C++ Smart Contract code (`QSurv.h`) ready for Qubic Mainnet.
 -   `/src/lib/qubic-simulation.ts`: The client logic interacting with the Qubic Testnet environment.
 -   `/src/app/api`: Backend logic for AI and IPFS.
 

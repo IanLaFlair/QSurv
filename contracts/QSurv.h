@@ -10,60 +10,154 @@ struct QSURV : public ContractBase
 public:
 
     // ============================================
+    // CONSTANTS
+    // ============================================
+    static const uint64 PLATFORM_FEE_PERCENT = 5;
+    static const uint64 REFERRAL_REWARD_PERCENT = 25;
+    static const uint64 BASE_REWARD_PERCENT = 60;
+
+    // ============================================
+    // STATE & STRUCTS
+    // ============================================
+    static const int MAX_SURVEYS = 1000;
+    static const uint64 ORACLE_ADDRESS = 0x1234567890ABCDEF; // Example Oracle ID
+
+    struct Survey {
+        uint64 id;
+        uint64 creator;
+        uint64 rewardAmount;
+        uint64 rewardPerRespondent;
+        uint32 maxRespondents;
+        uint32 currentRespondents;
+        uint64 balance;
+        uint8 ipfsHash[64];
+        bool isActive;
+    };
+
+    // Contract State
+    Survey surveys[MAX_SURVEYS];
+    uint32 surveyCount = 0;
+
+    // ============================================
     // FUNCTIONS
     // ============================================
 
-    // 1. Create Survey - Returns survey ID
+    // 1. Create Survey
     struct createSurvey_input {
-        uint64 rewardPool;              // Total QUs to lock
-        uint32 maxRespondents;          // Max number of respondents
+        uint64 rewardPool;
+        uint32 maxRespondents;
+        uint8 ipfsHash[64];
     };
 
     struct createSurvey_output {
-        uint64 surveyId;                // ID of created survey (using creator's ID)
-        uint8 success;                  // 1 = success, 0 = failed
+        uint64 surveyId;
+        uint8 success;
     };
 
     PUBLIC_FUNCTION(createSurvey) {
-        // Simple implementation: return 1 as success
-        output.surveyId = 1;  // Simplified - just return a constant
+        if (surveyCount >= MAX_SURVEYS) {
+            output.success = 0;
+            return;
+        }
+        if (input.maxRespondents == 0 || input.rewardPool == 0) {
+            output.success = 0;
+            return;
+        }
+
+        // Lock Funds (Simulation of checking incoming tx)
+        // uint64 incoming = qpi_get_incoming_amount();
+        // if (incoming < input.rewardPool) return;
+
+        Survey& newSurvey = surveys[surveyCount];
+        newSurvey.id = surveyCount + 1;
+        newSurvey.creator = qpi_get_sender();
+        newSurvey.rewardAmount = input.rewardPool;
+        newSurvey.maxRespondents = input.maxRespondents;
+        newSurvey.rewardPerRespondent = input.rewardPool / input.maxRespondents;
+        newSurvey.currentRespondents = 0;
+        newSurvey.balance = input.rewardPool;
+        newSurvey.isActive = true;
+        
+        for(int i=0; i<64; i++) newSurvey.ipfsHash[i] = input.ipfsHash[i];
+
+        output.surveyId = newSurvey.id;
         output.success = 1;
+        surveyCount++;
     }
 
-    // 2. Record Response - Confirms response recorded
-    struct recordResponse_input {
-        uint64 surveyId;                // Which survey
+    // 2. Payout Respondent
+    struct payout_input {
+        uint64 surveyId;
+        id respondentAddress;
+        id referrerAddress;
+        uint8 respondentTier;
     };
 
-    struct recordResponse_output {
-        uint8 success;                  // 1 = success, 0 = failed
+    struct payout_output {
+        uint64 amountPaid;
+        uint64 bonusPaid;
+        uint64 referralPaid;
+        uint8 success;
     };
 
-    PUBLIC_FUNCTION(recordResponse) {
-        // Simple confirmation
+    PUBLIC_FUNCTION(payout) {
+        // Security Check
+        if (qpi_get_sender() != ORACLE_ADDRESS) {
+            output.success = 0;
+            return;
+        }
+
+        // Find Survey
+        int index = -1;
+        for (int i = 0; i < surveyCount; i++) {
+            if (surveys[i].id == input.surveyId) {
+                index = i;
+                break;
+            }
+        }
+
+        if (index == -1) { output.success = 0; return; }
+        Survey& s = surveys[index];
+
+        if (!s.isActive || s.currentRespondents >= s.maxRespondents || s.balance < s.rewardPerRespondent) {
+            output.success = 0;
+            return;
+        }
+
+        // Calculate Splits
+        uint64 totalReward = s.rewardPerRespondent;
+        uint64 baseReward = (totalReward * BASE_REWARD_PERCENT) / 100;
+        uint64 referralReward = (totalReward * REFERRAL_REWARD_PERCENT) / 100;
+        uint64 platformFee = (totalReward * PLATFORM_FEE_PERCENT) / 100;
+
+        // Staking Bonus
+        uint64 bonus = 0;
+        if (input.respondentTier == 1) bonus = (baseReward * 5) / 100;
+        if (input.respondentTier == 2) bonus = (baseReward * 10) / 100;
+        if (input.respondentTier == 3) bonus = (baseReward * 25) / 100;
+
+        // Execute Transfers (Pseudo-code for QPI)
+        qpi_send_funds(input.respondentAddress, baseReward + bonus);
+        
+        if (input.referrerAddress != 0) {
+            qpi_send_funds(input.referrerAddress, referralReward);
+        } else {
+            qpi_send_funds(ORACLE_ADDRESS, referralReward); // Burn/Treasury
+        }
+        
+        qpi_send_funds(ORACLE_ADDRESS, platformFee);
+
+        // Update State
+        s.balance -= totalReward;
+        s.currentRespondents++;
+
+        if (s.currentRespondents >= s.maxRespondents) {
+            s.isActive = false;
+        }
+
         output.success = 1;
-    }
-
-    // 3. Get Info - Returns basic info
-    struct getInfo_input {
-        uint64 dummy;
-    };
-
-    struct getInfo_output {
-        uint64 value;
-    };
-
-    PUBLIC_FUNCTION(getInfo) {
-        output.value = 12345;  // Test value
-    }
-
-    // ============================================
-    // FUNCTION REGISTRATION
-    // ============================================
-    
-    REGISTER_USER_FUNCTIONS_AND_PROCEDURES() {
-        REGISTER_USER_FUNCTION(createSurvey, 1);
-        REGISTER_USER_FUNCTION(recordResponse, 2);
-        REGISTER_USER_FUNCTION(getInfo, 3);
+        output.amountPaid = baseReward;
+        output.bonusPaid = bonus;
+        output.referralPaid = referralReward;
     }
 };
