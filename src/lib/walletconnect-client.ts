@@ -36,15 +36,45 @@ export async function waitForSessionApproval(approval: () => Promise<SessionType
         const session = await approval();
         currentSession = session;
 
+        // Log the full session for debugging
+        console.log('WalletConnect session approved:', session);
+        console.log('Session namespaces:', session.namespaces);
+
         // Extract address from session
         const qubicNamespace = session.namespaces.qubic;
-        if (qubicNamespace && qubicNamespace.accounts.length > 0) {
-            // Format: "qubic:mainnet:ADDRESS"
-            const address = qubicNamespace.accounts[0].split(':')[2];
-            return { session, address };
+
+        if (!qubicNamespace) {
+            console.error('No qubic namespace found. Available namespaces:', Object.keys(session.namespaces));
+            throw new Error('No Qubic namespace found in session');
         }
 
-        throw new Error('No Qubic account found in session');
+        if (!qubicNamespace.accounts || qubicNamespace.accounts.length === 0) {
+            console.error('No accounts in qubic namespace:', qubicNamespace);
+            throw new Error('No accounts found in Qubic namespace');
+        }
+
+        console.log('Qubic accounts:', qubicNamespace.accounts);
+
+        // Account format: "qubic:mainnet:ADDRESS" or just "ADDRESS"
+        const accountString = qubicNamespace.accounts[0];
+        let address: string;
+
+        if (accountString.includes(':')) {
+            // Format: "qubic:mainnet:ADDRESS"
+            const parts = accountString.split(':');
+            address = parts[parts.length - 1]; // Get last part (ADDRESS)
+        } else {
+            // Format: "ADDRESS" (direct address)
+            address = accountString;
+        }
+
+        console.log('Extracted address:', address);
+
+        if (!address || address.length === 0) {
+            throw new Error('Invalid address extracted from session');
+        }
+
+        return { session, address };
     } catch (error) {
         console.error('Session approval failed:', error);
         throw error;
@@ -87,8 +117,18 @@ export async function restoreSession() {
     if (sessions.length > 0) {
         currentSession = sessions[0];
         const qubicNamespace = currentSession.namespaces.qubic;
-        if (qubicNamespace && qubicNamespace.accounts.length > 0) {
-            const address = qubicNamespace.accounts[0].split(':')[2];
+
+        if (qubicNamespace && qubicNamespace.accounts && qubicNamespace.accounts.length > 0) {
+            const accountString = qubicNamespace.accounts[0];
+            let address: string;
+
+            if (accountString.includes(':')) {
+                const parts = accountString.split(':');
+                address = parts[parts.length - 1];
+            } else {
+                address = accountString;
+            }
+
             return { session: currentSession, address };
         }
     }
