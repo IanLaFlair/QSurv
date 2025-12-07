@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useWallet } from "@/components/providers/WalletProvider";
 import { Wallet, LogOut, Copy, Check, ChevronDown } from "lucide-react";
 import ConnectWalletModal from "./ConnectWalletModal";
+import WalletConnectQRModal from "./WalletConnectQRModal";
 
 export default function WalletConnectButton() {
-  const { connect, disconnect, isConnected, address, balance } = useWallet();
+  const { connect, disconnect, isConnected, address, balance, isConnecting, wcUri } = useWallet();
   const [isOpen, setIsOpen] = useState(false);
   const [showConnectModal, setShowConnectModal] = useState(false);
+  const [showWCModal, setShowWCModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -20,9 +22,13 @@ export default function WalletConnectButton() {
   };
 
   const handleConnect = async (type: 'metamask' | 'walletconnect') => {
-    // In the future, we can pass the 'type' to the connect function
-    await connect();
     setShowConnectModal(false);
+    
+    if (type === 'walletconnect') {
+      setShowWCModal(true);
+    }
+    
+    await connect(type);
   };
 
   if (!isConnected) {
@@ -39,6 +45,12 @@ export default function WalletConnectButton() {
           isOpen={showConnectModal} 
           onClose={() => setShowConnectModal(false)}
           onConnect={handleConnect}
+        />
+        <WalletConnectQRModal
+          isOpen={showWCModal}
+          onClose={() => setShowWCModal(false)}
+          wcUri={wcUri}
+          isConnecting={isConnecting}
         />
       </>
     );
