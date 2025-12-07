@@ -5,11 +5,15 @@ import { ArrowRight, ShieldCheck, Wallet, Zap } from "lucide-react";
 
 import { useWallet } from "@/components/providers/WalletProvider";
 
+import BackgroundAnimation from "@/components/BackgroundAnimation";
+
 export default function Home() {
   const { connect, isConnected, address } = useWallet();
 
   return (
-    <div className="min-h-screen bg-gradient-premium flex flex-col">
+    <div className="min-h-screen bg-[#050505] flex flex-col relative overflow-hidden">
+      <BackgroundAnimation />
+      
       {/* Header */}
       <header className="w-full py-6 px-10 flex justify-between items-center glass-panel border-b-0 rounded-none relative z-50">
         <div className="flex items-center gap-2">

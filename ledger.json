@@ -133,13 +133,39 @@
           "to": "ZBMDYCEILFTMSERCWDOZALXCYWOAIQHHYWZYYVVWJFYNLGWQDKYTSZLDDYZI"
         }
       ]
+    },
+    "cmivg6wet0000lm0j0x4gjcvd": {
+      "balance": 940,
+      "isActive": true,
+      "transactions": [
+        {
+          "hash": "4574b6608893b8c94a9f2457fe3cff3bf48652c0a085d047447ab9e45603",
+          "type": "FUND",
+          "amount": 1000,
+          "timestamp": "2025-12-07T08:15:39.419Z",
+          "from": "KWUISBWWQRFJVASCJHWENJRVRZJAOYDKCINSNGCXKBLGNGYJZTXLPNREEGQJ",
+          "to": "QSURV_CONTRACT_ADDRESS"
+        },
+        {
+          "hash": "62ab8990101c03c29e0d03fec9bd225016853f43e633246a6564c8e2614e",
+          "type": "PAYOUT",
+          "amount": 60,
+          "timestamp": "2025-12-07T08:18:15.151Z",
+          "from": "QSURV_CONTRACT_ADDRESS",
+          "to": "CNSRAYCEDNDVUGNNXYXRZKNTSSGAOHGCIEUREAMZNFEDMPLFNRQMHOBFIZBC"
+        }
+      ]
     }
   },
   "users": {
     "ZBMDYCEILFTMSERCWDOZALXCYWOAIQHHYWZYYVVWJFYNLGWQDKYTSZLDDYZI": {
       "stakingBalance": 10000000,
       "tier": "Analyst"
+    },
+    "CNSRAYCEDNDVUGNNXYXRZKNTSSGAOHGCIEUREAMZNFEDMPLFNRQMHOBFIZBC": {
+      "stakingBalance": 10000000,
+      "tier": "Analyst"
     }
   },
-  "treasuryBalance": -3
+  "treasuryBalance": 0
 }
