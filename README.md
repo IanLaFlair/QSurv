@@ -48,14 +48,21 @@ cd QSurv
 npm install
 ```
 
-### 2. Configure Environment
-Create a `.env` file in the root directory:
-```env
-DATABASE_URL="file:./dev.db"
-GEMINI_API_KEY="your_google_gemini_key"
-PINATA_JWT="your_pinata_jwt"
-PINATA_GATEWAY="your_pinata_gateway"
+### 2. Environment Setup
+Create a `.env.local` file in the root directory:
+```bash
+# Google Gemini AI (for answer verification)
+GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key_here
+
+# Pinata IPFS (for decentralized storage)
+NEXT_PUBLIC_PINATA_JWT=your_pinata_jwt_here
+NEXT_PUBLIC_PINATA_GATEWAY=your_gateway_url_here
+
+# WalletConnect (for mobile wallet connections)
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=a5fe9a648499ad1340176532e41e21b9
 ```
+
+**Note:** The WalletConnect Project ID is already configured. For production, register your own at [cloud.walletconnect.com](https://cloud.walletconnect.com/).
 
 ### 3. Run Development Server
 ```bash
