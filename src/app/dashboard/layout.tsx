@@ -7,6 +7,8 @@ import { BarChart3, Home, LayoutGrid, PlusCircle, User } from "lucide-react";
 import WalletConnectButton from "@/components/WalletConnectButton";
 import Modal from "@/components/Modal";
 
+import BottomNav from "@/components/BottomNav";
+
 export default function DashboardLayout({
   children,
 }: {
@@ -21,7 +23,7 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-black flex">
+    <div className="min-h-screen bg-black flex pb-16 md:pb-0">
       <Modal
         isOpen={showFeatureModal}
         onClose={() => setShowFeatureModal(false)}
@@ -61,12 +63,6 @@ export default function DashboardLayout({
           />
           <NavItem 
             href="#" 
-            icon={<User className="w-5 h-5" />} 
-            label="Earn Rewards" 
-            onClick={handleFeatureClick}
-          />
-          <NavItem 
-            href="#" 
             icon={<BarChart3 className="w-5 h-5" />} 
             label="Analytics" 
             onClick={handleFeatureClick}
@@ -86,6 +82,9 @@ export default function DashboardLayout({
           {children}
         </div>
       </main>
+
+      {/* Bottom Navigation - Mobile Only */}
+      <BottomNav />
     </div>
   );
 }

@@ -29,6 +29,117 @@
           "to": "ZBMDYCEILFTMSERCWDOZALXCYWOAIQHHYWZYYVVWJFYNLGWQDKYTSZLDDYZI"
         }
       ]
+    },
+    "cmivajm6f0000oo8129674vxq": {
+      "balance": 900,
+      "isActive": true,
+      "transactions": [
+        {
+          "hash": "9b50c888cb09bd1b9778afd5eb1ae74d5ab0fcf6bfa60a4ea4d557dd6a4d",
+          "type": "FUND",
+          "amount": 1000,
+          "timestamp": "2025-12-07T05:37:34.996Z",
+          "from": "KWUISBWWQRFJVASCJHWENJRVRZJAOYDKCINSNGCXKBLGNGYJZTXLPNREEGQJ",
+          "to": "QSURV_CONTRACT_ADDRESS"
+        },
+        {
+          "hash": "3546044da459f0f4773debcfd32576ad1d598ed9eef271de47e91e1966e9",
+          "type": "PAYOUT",
+          "amount": 100,
+          "timestamp": "2025-12-07T05:46:33.482Z",
+          "from": "QSURV_CONTRACT_ADDRESS",
+          "to": "ZBMDYCEILFTMSERCWDOZALXCYWOAIQHHYWZYYVVWJFYNLGWQDKYTSZLDDYZI"
+        }
+      ]
+    },
+    "cmivao5220004oo812sdttugu": {
+      "balance": 900,
+      "isActive": true,
+      "transactions": [
+        {
+          "hash": "26fd95fab8d9568b20c7df8f507d9d6f5553b0874ab133857443d87412c2",
+          "type": "FUND",
+          "amount": 1000,
+          "timestamp": "2025-12-07T05:41:06.113Z",
+          "from": "KWUISBWWQRFJVASCJHWENJRVRZJAOYDKCINSNGCXKBLGNGYJZTXLPNREEGQJ",
+          "to": "QSURV_CONTRACT_ADDRESS"
+        },
+        {
+          "hash": "bf972b1a32cfef832045c637993e28d6f21c45f29f9798b513d7402d93ce",
+          "type": "PAYOUT",
+          "amount": 100,
+          "timestamp": "2025-12-07T05:57:35.705Z",
+          "from": "QSURV_CONTRACT_ADDRESS",
+          "to": "ZBMDYCEILFTMSERCWDOZALXCYWOAIQHHYWZYYVVWJFYNLGWQDKYTSZLDDYZI"
+        }
+      ]
+    },
+    "cmivbfozj000eoo813xv9l4tt": {
+      "balance": 880,
+      "isActive": true,
+      "transactions": [
+        {
+          "hash": "8ed008032b5f1227339bbece793e87df294052435d1e8780d7059b9c3aaa",
+          "type": "FUND",
+          "amount": 1000,
+          "timestamp": "2025-12-07T06:02:31.620Z",
+          "from": "KWUISBWWQRFJVASCJHWENJRVRZJAOYDKCINSNGCXKBLGNGYJZTXLPNREEGQJ",
+          "to": "QSURV_CONTRACT_ADDRESS"
+        },
+        {
+          "hash": "25a74925557172b5326d9bf7f7c4c8579aafba6f501972e64cb6180d09b7",
+          "type": "PAYOUT",
+          "amount": 60,
+          "timestamp": "2025-12-07T06:04:44.246Z",
+          "from": "QSURV_CONTRACT_ADDRESS",
+          "to": "ZBMDYCEILFTMSERCWDOZALXCYWOAIQHHYWZYYVVWJFYNLGWQDKYTSZLDDYZI"
+        },
+        {
+          "hash": "cd3b5a930abcf38a565235700a4210218b80dabaed1427442fdbbfaafa32",
+          "type": "PAYOUT",
+          "amount": 60,
+          "timestamp": "2025-12-07T06:08:18.973Z",
+          "from": "QSURV_CONTRACT_ADDRESS",
+          "to": "CNSRAYCEDNDVUGNNXYXRZKNTSSGAOHGCIEUREAMZNFEDMPLFNRQMHOBFIZBC"
+        }
+      ]
+    },
+    "cmivbuywd000ooo8135ou43yi": {
+      "balance": 940,
+      "isActive": true,
+      "transactions": [
+        {
+          "hash": "2b99654d883d03428a9bc6c38456b9b556c06b31803fdd05548c45055b6c",
+          "type": "FUND",
+          "amount": 1000,
+          "timestamp": "2025-12-07T06:14:24.306Z",
+          "from": "KWUISBWWQRFJVASCJHWENJRVRZJAOYDKCINSNGCXKBLGNGYJZTXLPNREEGQJ",
+          "to": "QSURV_CONTRACT_ADDRESS"
+        },
+        {
+          "hash": "5db87265041b1517d44fb1c936da6da7122c59215a19697a46fcccef2b65",
+          "type": "PAYOUT",
+          "amount": 60,
+          "timestamp": "2025-12-07T06:15:36.597Z",
+          "from": "QSURV_CONTRACT_ADDRESS",
+          "to": "ZBMDYCEILFTMSERCWDOZALXCYWOAIQHHYWZYYVVWJFYNLGWQDKYTSZLDDYZI"
+        },
+        {
+          "hash": "c4f9fdb78156b6c48f5dd3eab68dc5e7d7b8d024650f2c3058df5bb86485",
+          "type": "BONUS",
+          "amount": 6,
+          "timestamp": "2025-12-07T06:15:36.597Z",
+          "from": "QSURV_TREASURY",
+          "to": "ZBMDYCEILFTMSERCWDOZALXCYWOAIQHHYWZYYVVWJFYNLGWQDKYTSZLDDYZI"
+        }
+      ]
     }
-  }
+  },
+  "users": {
+    "ZBMDYCEILFTMSERCWDOZALXCYWOAIQHHYWZYYVVWJFYNLGWQDKYTSZLDDYZI": {
+      "stakingBalance": 10000000,
+      "tier": "Analyst"
+    }
+  },
+  "treasuryBalance": -3
 }

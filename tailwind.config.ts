@@ -24,10 +24,14 @@ const config: Config = {
           "0%": { transform: "translateY(20px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
+        "border-beam": {
+          "100%": { "offset-distance": "100%" },
+        },
       },
       animation: {
         fadeIn: "fadeIn 0.3s ease-out forwards",
         slideUp: "slideUp 0.3s ease-out forwards",
+        "border-beam": "border-beam calc(var(--duration)*1s) infinite linear",
       },
     },
   },

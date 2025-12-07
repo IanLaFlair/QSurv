@@ -62,16 +62,29 @@ export async function POST(request: Request) {
         if (allValid) {
             // 2. Fetch Survey to get Reward Amount
             const survey = await prisma.survey.findUnique({ where: { id: surveyId } });
-            const rewardAmount = survey?.rewardPerRespondent || 0;
+            const totalRewardPerRespondent = survey?.rewardPerRespondent || 0;
+
+            // Apply 60% allocation for Respondent (as per UI breakdown)
+            const baseReward = totalRewardPerRespondent * 0.6;
 
             // 3. Trigger Payout via Smart Contract Simulation
             let txHash = "FAILED_TX";
+            let bonusAmount = 0;
+            let referralAmount = 0;
+
             try {
-                txHash = await qubicSimulation.payout(surveyId, rewardAmount, walletAddress);
-                console.log(`[Simulation] Payout of ${rewardAmount} QUs to ${walletAddress} successful. Tx: ${txHash}`);
+                const payoutResult = await qubicSimulation.payout(surveyId, baseReward, walletAddress);
+                txHash = payoutResult.txHash;
+                bonusAmount = payoutResult.bonus;
+                console.log(`[Simulation] Payout of ${baseReward} QUs + ${bonusAmount} Bonus to ${walletAddress} successful. Tx: ${txHash}`);
+
+                // Handle Referral Payout (if code provided)
+                if (body.referralCode) {
+                    referralAmount = totalRewardPerRespondent * 0.25; // 25% for L1
+                    console.log(`[Simulation] Referral Payout of ${referralAmount} QUs to Referrer (Code: ${body.referralCode}) - PENDING FULL ADDRESS RESOLUTION`);
+                }
             } catch (simError) {
                 console.error("[Simulation] Payout failed:", simError);
-                // In a real app, we might want to flag this for manual review
             }
 
             // 4. Save Response to Database
@@ -93,7 +106,8 @@ export async function POST(request: Request) {
                 score: averageScore,
                 feedback: feedback,
                 payoutTx: txHash,
-                message: "Answers verified! Payout initiated."
+                bonus: bonusAmount,
+                message: `Answers verified! Payout initiated. You earned ${baseReward} QUs${bonusAmount > 0 ? ` + ${bonusAmount} Bonus!` : ''}`
             });
         } else {
             // Save rejected response too

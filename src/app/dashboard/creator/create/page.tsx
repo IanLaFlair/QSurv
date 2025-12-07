@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Trash2, DollarSign, Users, Save, Loader2 } from "lucide-react";
 import { useWallet } from "@/components/providers/WalletProvider";
 import ReferralFlowModal from "@/components/ReferralFlowModal";
+import Modal from "@/components/Modal";
 
 export default function CreateSurveyPage() {
   const router = useRouter();
@@ -25,6 +26,32 @@ export default function CreateSurveyPage() {
 
   // Referral Modal State
   const [showReferralModal, setShowReferralModal] = useState(false);
+
+  // Alert Modal State
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: React.ReactNode;
+    type: "default" | "error" | "success";
+    redirectOnClose?: boolean;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "default",
+    redirectOnClose: false
+  });
+
+  const showModal = (title: string, message: React.ReactNode, type: "default" | "error" | "success" = "default", redirectOnClose = false) => {
+    setModal({ isOpen: true, title, message, type, redirectOnClose });
+  };
+
+  const closeModal = () => {
+    if (modal.redirectOnClose) {
+      router.push("/dashboard");
+    }
+    setModal(prev => ({ ...prev, isOpen: false }));
+  };
 
   const generateQuestions = async () => {
     if (!prompt) return;
@@ -47,11 +74,11 @@ export default function CreateSurveyPage() {
         setQuestions(newQuestions);
         setMode("manual"); // Switch back to view results
       } else {
-        alert("AI Generation Failed: " + data.error);
+        showModal("AI Generation Failed", data.error, "error");
       }
     } catch (error) {
       console.error(error);
-      alert("Failed to generate questions. Check console for details.");
+      showModal("Error", "Failed to generate questions. Check console for details.", "error");
     } finally {
       setIsGenerating(false);
     }
@@ -67,11 +94,11 @@ export default function CreateSurveyPage() {
 
   const handleDeploy = async () => {
     if (!isConnected || !address) {
-      alert("Please connect your wallet first!");
+      showModal("Wallet Required", "Please connect your wallet first!", "error");
       return;
     }
     if (!title || !description) {
-      alert("Please fill in the title and description.");
+      showModal("Missing Information", "Please fill in the title and description.", "error");
       return;
     }
 
@@ -93,15 +120,36 @@ export default function CreateSurveyPage() {
       const data = await res.json();
       if (data.success) {
         // Simulate Smart Contract Call
-        const ipfsMsg = data.ipfsHash ? `\n\n🌍 IPFS Hash: ${data.ipfsHash}` : "";
-        alert(`Survey Created! ID: ${data.survey.id}${ipfsMsg}\n\n(Simulated) Locked ${rewardPool} QUs in Smart Contract.`);
-        router.push("/dashboard");
+        const successMessage = (
+          <div className="space-y-4">
+            <p>Your survey has been successfully created and deployed to the Qubic network (simulated).</p>
+            
+            <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Survey ID:</span>
+                <span className="font-mono text-white">{data.survey.id}</span>
+              </div>
+              {data.ipfsHash && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">IPFS Hash:</span>
+                  <span className="font-mono text-blue-400 truncate max-w-[200px]">{data.ipfsHash}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Locked Funds:</span>
+                <span className="font-mono text-green-400">{rewardPool.toLocaleString()} QUs</span>
+              </div>
+            </div>
+          </div>
+        );
+        
+        showModal("Survey Created!", successMessage, "success", true);
       } else {
-        alert("Failed to create survey: " + data.error);
+        showModal("Deployment Failed", data.error, "error");
       }
     } catch (error: any) {
       console.error("Deploy Error:", error);
-      alert("An error occurred: " + (error.message || JSON.stringify(error)));
+      showModal("Error", "An error occurred: " + (error.message || JSON.stringify(error)), "error");
     } finally {
       setIsDeploying(false);
     }
@@ -111,6 +159,16 @@ export default function CreateSurveyPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
+      {/* Global Modal */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        type={modal.type}
+      >
+        {modal.message}
+      </Modal>
+
       {/* Referral Flow Modal */}
       <ReferralFlowModal
         isOpen={showReferralModal}

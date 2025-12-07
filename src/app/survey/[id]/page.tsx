@@ -2,11 +2,12 @@
 
 import { useEffect, useState, use } from "react";
 import { useWallet } from "@/components/providers/WalletProvider";
-import { Loader2, CheckCircle2, XCircle, Wallet, Send } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Wallet, Send, Award } from "lucide-react";
 import WalletConnectButton from "@/components/WalletConnectButton";
 import Modal from "@/components/Modal";
 import ReferralBanner from "@/components/ReferralBanner";
 import ReferralSuccessModal from "@/components/ReferralSuccessModal";
+import WalletProfileModal from "@/components/WalletProfileModal";
 
 interface Question {
   id: string;
@@ -29,7 +30,7 @@ export default function PublicSurveyPage({ params }: { params: Promise<{ id: str
   const [loading, setLoading] = useState(true);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<{ success: boolean; message: string; score?: number; payoutTx?: string; feedback?: string } | null>(null);
+  const [result, setResult] = useState<{ success: boolean; message: string; score?: number; payoutTx?: string; feedback?: string; bonus?: number } | null>(null);
 
   const [modal, setModal] = useState<{ isOpen: boolean; title: string; message: string; type: "default" | "error" | "success" }>({
     isOpen: false,
@@ -39,6 +40,7 @@ export default function PublicSurveyPage({ params }: { params: Promise<{ id: str
   });
 
   const [showReferralModal, setShowReferralModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
 
   const showModal = (title: string, message: string, type: "default" | "error" | "success" = "default") => {
     setModal({ isOpen: true, title, message, type });
@@ -149,6 +151,20 @@ export default function PublicSurveyPage({ params }: { params: Promise<{ id: str
             <div className="bg-white/5 rounded-xl p-4 border border-white/10">
               <div className="text-sm text-gray-500 mb-1">AI Quality Score</div>
               <div className="text-3xl font-bold text-primary">{result.score?.toFixed(1)}/10</div>
+              
+              {(result.bonus || 0) > 0 && (
+                <div className="mt-4 pt-4 border-t border-white/10">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-400">Base Reward</span>
+                    <span className="text-white font-mono">{((survey?.rewardPerRespondent || 0) * 0.6).toLocaleString()} QUs</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mt-1">
+                    <span className="text-purple-400 flex items-center gap-1"><Award className="w-3 h-3" /> Staking Bonus</span>
+                    <span className="text-purple-400 font-mono">+{result.bonus.toLocaleString()} QUs</span>
+                  </div>
+                </div>
+              )}
+
               <div className="mt-4 pt-4 border-t border-white/10">
                 <div className="text-xs text-gray-500 mb-1">Payout Transaction</div>
                 <div className="font-mono text-xs text-gray-300 break-all">{result.payoutTx}</div>
@@ -187,6 +203,15 @@ export default function PublicSurveyPage({ params }: { params: Promise<{ id: str
         />
       )}
 
+      {/* Wallet Profile Modal */}
+      {address && (
+        <WalletProfileModal
+          isOpen={showWalletModal}
+          onClose={() => setShowWalletModal(false)}
+          address={address}
+        />
+      )}
+
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl">
         {/* Background Gradient */}
@@ -208,8 +233,11 @@ export default function PublicSurveyPage({ params }: { params: Promise<{ id: str
 
           <div className="flex justify-center gap-4 pt-4">
             <div className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-              <div className="text-sm text-gray-500 mb-1">Reward</div>
-              <div className="text-2xl font-bold text-[#00f0ff]">{survey.rewardPerRespondent} QUs</div>
+              <div className="text-sm text-gray-500 mb-1">Base Reward</div>
+              <div className="text-2xl font-bold text-[#00f0ff]">{(survey.rewardPerRespondent * 0.6).toLocaleString()} QUs</div>
+              <div className="text-[10px] text-gray-500 mt-1">
+                from {survey.rewardPerRespondent} QUs allocation
+              </div>
             </div>
             <div className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
               <div className="text-sm text-gray-500 mb-1">Questions</div>
@@ -261,12 +289,16 @@ export default function PublicSurveyPage({ params }: { params: Promise<{ id: str
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <div className="text-green-500 flex items-center gap-2 text-sm font-medium">
-                      <CheckCircle2 className="w-4 h-4" /> Wallet Connected: <span className="font-mono text-xs text-green-400">{address?.slice(0, 6)}...{address?.slice(-6)}</span>
-                    </div>
+                    <button 
+                      onClick={() => setShowWalletModal(true)}
+                      className="text-green-500 flex items-center gap-2 text-sm font-medium hover:bg-white/5 px-2 py-1 rounded-lg transition"
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> 
+                      <span>Wallet Connected: <span className="font-mono text-xs text-green-400 underline decoration-dotted underline-offset-4">{address?.slice(0, 6)}...{address?.slice(-6)}</span></span>
+                    </button>
                     <button 
                       onClick={disconnect}
-                      className="text-xs text-red-500 hover:text-red-400 underline"
+                      className="text-xs text-red-500 hover:text-red-400 underline ml-2"
                     >
                       Disconnect
                     </button>
