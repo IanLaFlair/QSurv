@@ -111,33 +111,33 @@ export default function WalletProvider({ children }: { children: React.ReactNode
   };
 
   const connectWalletConnect = async () => {
-    // WalletConnect integration
-    // For now, this is a simplified implementation
-    // Full implementation would use @walletconnect/web3wallet
-    
     try {
-      // Generate WalletConnect URI
-      // This would normally come from WalletConnect client initialization
-      const mockUri = `wc:demo-uri@2?relay-protocol=irn&symKey=mock-key`;
-      setWcUri(mockUri);
+      // Dynamically import WalletConnect client (client-side only)
+      const { createWalletConnectSession, waitForSessionApproval } = await import('@/lib/walletconnect-client');
       
-      // In a real implementation:
-      // 1. Initialize WalletConnect client
-      // 2. Create pairing/session
-      // 3. Wait for mobile wallet approval
-      // 4. Get address from approved session
+      // Create session and get URI for QR code
+      const { uri, approval } = await createWalletConnectSession();
       
-      // For demo purposes, we'll simulate a connection after 3 seconds
-      setTimeout(() => {
-        const mockAddress = 'QUBIC' + Math.random().toString(36).substring(2, 15).toUpperCase();
-        setAddress(mockAddress);
-        setIsConnected(true);
-        setWalletType('walletconnect');
-        setWcUri(null);
-        localStorage.setItem('qsurv_wallet_address', mockAddress);
-        localStorage.setItem('qsurv_wallet_type', 'walletconnect');
-        setBalance(0);
-      }, 3000);
+      if (!uri) {
+        throw new Error('Failed to generate WalletConnect URI');
+      }
+      
+      // Set URI for QR modal to display
+      setWcUri(uri);
+      
+      // Wait for user to scan QR and approve in mobile wallet
+      const { session, address } = await waitForSessionApproval(approval);
+      
+      // Connection approved!
+      setAddress(address);
+      setIsConnected(true);
+      setWalletType('walletconnect');
+      setWcUri(null);
+      localStorage.setItem('qsurv_wallet_address', address);
+      localStorage.setItem('qsurv_wallet_type', 'walletconnect');
+      setBalance(0);
+      
+      console.log('WalletConnect session established:', session);
       
     } catch (error) {
       console.error("WalletConnect connection failed", error);
@@ -147,10 +147,20 @@ export default function WalletProvider({ children }: { children: React.ReactNode
   };
 
   const restoreWalletConnectSession = async () => {
-    // Check localStorage for existing WalletConnect session
-    // Restore if valid
-    // This would use WalletConnect SDK's session restoration
-    console.log('Attempting to restore WalletConnect session...');
+    try {
+      const { restoreSession } = await import('@/lib/walletconnect-client');
+      const restored = await restoreSession();
+      
+      if (restored) {
+        setAddress(restored.address);
+        setIsConnected(true);
+        setWalletType('walletconnect');
+        setBalance(0);
+        console.log('WalletConnect session restored:', restored.session);
+      }
+    } catch (error) {
+      console.error('Failed to restore WalletConnect session:', error);
+    }
   };
 
   const connect = async (type: 'metamask' | 'walletconnect') => {
@@ -170,7 +180,17 @@ export default function WalletProvider({ children }: { children: React.ReactNode
     }
   };
 
-  const disconnect = () => {
+  const disconnect = async () => {
+    // Disconnect WalletConnect session if active
+    if (walletType === 'walletconnect') {
+      try {
+        const { disconnectWalletConnect } = await import('@/lib/walletconnect-client');
+        await disconnectWalletConnect();
+      } catch (error) {
+        console.error('Failed to disconnect WalletConnect:', error);
+      }
+    }
+    
     setAddress(null);
     setIsConnected(false);
     setBalance(0);
@@ -178,8 +198,6 @@ export default function WalletProvider({ children }: { children: React.ReactNode
     setWcUri(null);
     localStorage.removeItem('qsurv_wallet_address');
     localStorage.removeItem('qsurv_wallet_type');
-    
-    // TODO: Disconnect WalletConnect session if active
   };
 
   return (
