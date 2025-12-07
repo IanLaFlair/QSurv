@@ -1,6 +1,8 @@
 "use client";
 
 import { X, Users, TrendingUp, Award, ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface ReferralFlowModalProps {
   isOpen: boolean;
@@ -9,15 +11,45 @@ interface ReferralFlowModalProps {
 }
 
 export default function ReferralFlowModal({ isOpen, onClose, rewardPerRespondent }: ReferralFlowModalProps) {
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      requestAnimationFrame(() => setVisible(true));
+    } else {
+      document.body.style.overflow = 'unset';
+      setVisible(false);
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  if (!mounted || !isOpen) return null;
 
   const respondentReward = (rewardPerRespondent * 0.6).toFixed(0);
   const l1Reward = (rewardPerRespondent * 0.25).toFixed(0);
   const l2Reward = (rewardPerRespondent * 0.1).toFixed(0);
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="relative w-full max-w-3xl max-h-[90vh] bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ease-out ${
+          visible ? "opacity-100" : "opacity-0"
+        }`}
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div 
+        className={`relative w-full max-w-3xl max-h-[90vh] bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ease-out transform ${
+          visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"
+        }`}
+      >
         {/* Header */}
         <div className="p-6 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-primary/10 to-secondary/10">
           <div>
@@ -194,6 +226,7 @@ export default function ReferralFlowModal({ isOpen, onClose, rewardPerRespondent
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -3,9 +3,12 @@
 :root {
   --background: #0a0a0a;
   --foreground: #ededed;
-  --primary: #00f0ff; /* Cyberpunk Blue */
-  --secondary: #7000ff; /* Deep Purple */
-  --accent: #ff0055; /* Neon Pink */
+  --primary: #00f0ff;
+  /* Cyberpunk Blue */
+  --secondary: #7000ff;
+  /* Deep Purple */
+  --accent: #ff0055;
+  /* Neon Pink */
   --card-bg: rgba(255, 255, 255, 0.05);
   --card-border: rgba(255, 255, 255, 0.1);
 }
@@ -20,7 +23,7 @@ body {
 /* Premium Gradients */
 .bg-gradient-premium {
   background: radial-gradient(circle at top left, rgba(112, 0, 255, 0.15), transparent 40%),
-              radial-gradient(circle at bottom right, rgba(0, 240, 255, 0.1), transparent 40%);
+    radial-gradient(circle at bottom right, rgba(0, 240, 255, 0.1), transparent 40%);
 }
 
 /* Glassmorphism */
@@ -43,4 +46,23 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }

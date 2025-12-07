@@ -1,7 +1,8 @@
 "use client";
 
 import { Gift, Copy, Check, Share2, X, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface ReferralSuccessModalProps {
   isOpen: boolean;
@@ -21,6 +22,22 @@ export default function ReferralSuccessModal({
   referralCode
 }: ReferralSuccessModalProps) {
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      requestAnimationFrame(() => setVisible(true));
+    } else {
+      document.body.style.overflow = 'unset';
+      setVisible(false);
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   const referralLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/survey/${surveyId}?ref=${referralCode}`;
 
@@ -41,11 +58,24 @@ export default function ReferralSuccessModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!mounted || !isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ease-out ${
+          visible ? "opacity-100" : "opacity-0"
+        }`}
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div 
+        className={`relative w-full max-w-lg bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out transform ${
+          visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"
+        }`}
+      >
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -135,6 +165,7 @@ export default function ReferralSuccessModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

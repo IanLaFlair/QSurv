@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface ModalProps {
   isOpen: boolean;
@@ -12,13 +13,24 @@ interface ModalProps {
 }
 
 export default function Modal({ isOpen, onClose, title, children, type = "default" }: ModalProps) {
-  const [show, setShow] = useState(isOpen);
+  const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    setShow(isOpen);
+    setMounted(true);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      requestAnimationFrame(() => setVisible(true));
+    } else {
+      document.body.style.overflow = 'unset';
+      setVisible(false);
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, [isOpen]);
 
-  if (!show) return null;
+  if (!mounted || !isOpen) return null;
 
   const borderColor = 
     type === "error" ? "border-red-500/50" : 
@@ -30,10 +42,21 @@ export default function Modal({ isOpen, onClose, title, children, type = "defaul
     type === "success" ? "shadow-[0_0_50px_rgba(34,197,94,0.2)]" : 
     "shadow-2xl";
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      {/* Backdrop */}
       <div 
-        className={`relative w-full max-w-2xl bg-[#0a0a0a] border ${borderColor} rounded-2xl p-6 ${glowColor} animate-in zoom-in-95 duration-200`}
+        className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ease-out ${
+          visible ? "opacity-100" : "opacity-0"
+        }`}
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div 
+        className={`relative w-full max-w-2xl bg-[#0a0a0a] border ${borderColor} rounded-2xl p-6 ${glowColor} max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out transform ${
+          visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"
+        }`}
       >
         <button 
           onClick={onClose}
@@ -59,6 +82,7 @@ export default function Modal({ isOpen, onClose, title, children, type = "defaul
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

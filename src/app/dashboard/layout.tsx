@@ -31,8 +31,8 @@ export default function DashboardLayout({
         This feature is currently under development. Stay tuned for updates!
       </Modal>
 
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-white/10 bg-black/50 backdrop-blur-xl flex flex-col fixed h-full z-20">
+      {/* Sidebar - Hidden on mobile */}
+      <aside className="hidden md:flex w-64 border-r border-white/10 bg-black/50 backdrop-blur-xl flex-col fixed h-full z-20">
         <div className="p-6 border-b border-white/10">
           <Link href="/" className="text-2xl font-bold tracking-tighter text-white flex items-center gap-2">
             <div className="w-6 h-6 bg-primary rounded flex items-center justify-center text-black text-xs">Q</div>
@@ -74,15 +74,15 @@ export default function DashboardLayout({
         </nav>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 ml-64 min-h-screen bg-gradient-premium">
-        <header className="h-16 border-b border-white/10 glass-panel sticky top-0 z-10 flex items-center justify-between px-8">
+      {/* Main Content - Full width on mobile, with left margin on desktop */}
+      <main className="flex-1 md:ml-64 min-h-screen bg-gradient-premium">
+        <header className="h-16 border-b border-white/10 glass-panel sticky top-0 z-10 flex items-center justify-between px-4 md:px-8">
           <h2 className="font-medium text-gray-400">Dashboard</h2>
           <div className="flex items-center gap-4">
             <WalletConnectButton />
           </div>
         </header>
-        <div className="p-8">
+        <div className="p-4 md:p-8">
           {children}
         </div>
       </main>

@@ -3,6 +3,7 @@
 import { X, Smartphone, Loader2, CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { createPortal } from "react-dom";
 
 interface WalletConnectQRModalProps {
   isOpen: boolean;
@@ -18,15 +19,25 @@ export default function WalletConnectQRModal({
   isConnecting 
 }: WalletConnectQRModalProps) {
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Reset copied state when modal closes
-    if (!isOpen) {
+    setMounted(true);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      requestAnimationFrame(() => setVisible(true));
+    } else {
+      document.body.style.overflow = 'unset';
+      setVisible(false);
       setCopied(false);
     }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!mounted || !isOpen) return null;
 
   const handleCopyUri = () => {
     if (wcUri) {
@@ -43,16 +54,22 @@ export default function WalletConnectQRModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+        className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ease-out ${
+          visible ? "opacity-100" : "opacity-0"
+        }`}
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div 
+        className={`relative w-full max-w-md bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out transform ${
+          visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"
+        }`}
+      >
         {/* Header */}
         <div className="p-6 border-b border-white/10 bg-gradient-to-r from-[#3b99fc]/10 to-[#2b89ec]/10">
           <div className="flex justify-between items-center">
@@ -166,6 +183,7 @@ export default function WalletConnectQRModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

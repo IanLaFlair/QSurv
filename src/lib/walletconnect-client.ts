@@ -48,14 +48,38 @@ export async function waitForSessionApproval(approval: () => Promise<SessionType
             throw new Error('No Qubic namespace found in session');
         }
 
+        console.log('Qubic namespace:', qubicNamespace);
+        console.log('Qubic accounts from session:', qubicNamespace.accounts);
+
+        // If no accounts in session, request them using qubic_requestAccounts
         if (!qubicNamespace.accounts || qubicNamespace.accounts.length === 0) {
-            console.error('No accounts in qubic namespace:', qubicNamespace);
-            throw new Error('No accounts found in Qubic namespace');
+            console.log('No accounts in session, calling qubic_requestAccounts...');
+
+            if (!signClient) throw new Error('SignClient not initialized');
+
+            // Call qubic_requestAccounts to get wallet accounts
+            // Don't specify chainId - let WalletConnect use the session's default
+            const accounts = await signClient.request({
+                topic: session.topic,
+                request: {
+                    method: 'qubic_requestAccounts',
+                    params: {},
+                },
+            });
+
+            console.log('qubic_requestAccounts response:', accounts);
+
+            // Extract address from the response
+            if (Array.isArray(accounts) && accounts.length > 0) {
+                const address = accounts[0].address;
+                console.log('Extracted address from qubic_requestAccounts:', address);
+                return { session, address };
+            }
+
+            throw new Error('No accounts returned from qubic_requestAccounts');
         }
 
-        console.log('Qubic accounts:', qubicNamespace.accounts);
-
-        // Account format: "qubic:mainnet:ADDRESS" or just "ADDRESS"
+        // If accounts exist in session, extract address
         const accountString = qubicNamespace.accounts[0];
         let address: string;
 
@@ -68,7 +92,7 @@ export async function waitForSessionApproval(approval: () => Promise<SessionType
             address = accountString;
         }
 
-        console.log('Extracted address:', address);
+        console.log('Extracted address from session:', address);
 
         if (!address || address.length === 0) {
             throw new Error('Invalid address extracted from session');
@@ -144,7 +168,6 @@ export async function callQubicMethod(method: string, params: any) {
 
     const result = await signClient.request({
         topic: currentSession.topic,
-        chainId: 'qubic:mainnet',
         request: {
             method,
             params,
