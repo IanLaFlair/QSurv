@@ -15,7 +15,7 @@ struct QSURV : public ContractBase {
   static constexpr uint64 PLATFORM_FEE_PERCENT = 5;
   static constexpr uint64 REFERRAL_REWARD_PERCENT = 25;
   static constexpr uint64 BASE_REWARD_PERCENT = 60;
-  static constexpr uint32 MAX_SURVEYS = 1000;
+  static constexpr uint32 MAX_SURVEYS = 1024;
   static constexpr uint32 IPFS_HASH_SIZE = 64;
 
   // ============================================
@@ -29,7 +29,7 @@ struct QSURV : public ContractBase {
     uint32 maxRespondents;
     uint32 currentRespondents;
     uint64 balance;
-    uint8 ipfsHash[IPFS_HASH_SIZE];
+    Array<uint8, 64> ipfsHash;
     bit isActive;
   };
 
@@ -76,7 +76,7 @@ public:
   struct createSurvey_input {
     uint64 rewardPool;
     uint32 maxRespondents;
-    uint8 ipfsHash[IPFS_HASH_SIZE];
+    Array<uint8, 64> ipfsHash;
   };
 
   struct createSurvey_output {
@@ -186,9 +186,9 @@ public:
     newSurvey.balance = input.rewardPool;
     newSurvey.isActive = 1;
 
-    // Copy IPFS hash
+    // Copy IPFS hash using Array's set method
     for (locals.i = 0; locals.i < IPFS_HASH_SIZE; locals.i++) {
-      newSurvey.ipfsHash[locals.i] = input.ipfsHash[locals.i];
+      newSurvey.ipfsHash.set(locals.i, input.ipfsHash.get(locals.i));
     }
 
     output.surveyId = newSurvey.id;
