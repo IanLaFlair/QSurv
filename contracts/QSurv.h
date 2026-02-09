@@ -46,9 +46,8 @@ protected:
   // ============================================
 public:
   INITIALIZE() {
-    _surveyCount = 0;
-    // Oracle address should be set via a separate admin procedure
-    // or hardcoded after deployment
+    // State is automatically reset before INITIALIZE() is called
+    // No initialization needed - state fields start at zero
   }
 
   BEGIN_EPOCH() {
@@ -104,7 +103,8 @@ public:
   };
 
   struct payout_locals {
-    sint32 index;
+    uint32 index;
+    bit found;
     uint64 totalReward;
     uint64 baseReward;
     uint64 referralReward;
@@ -155,9 +155,6 @@ public:
   // ============================================
 
   PUBLIC_PROCEDURE_WITH_LOCALS(createSurvey) {
-    output.success = 0;
-    output.surveyId = 0;
-
     // Validation checks
     if (state._surveyCount >= MAX_SURVEYS) {
       return;
@@ -174,67 +171,62 @@ public:
       return;
     }
 
-    // Create new survey
-    Survey &newSurvey = state._surveys.get(state._surveyCount);
-    newSurvey.id = state._surveyCount + 1;
-    newSurvey.creator = qpi.invocator();
-    newSurvey.rewardAmount = input.rewardPool;
-    newSurvey.maxRespondents = input.maxRespondents;
-    newSurvey.rewardPerRespondent =
+    // Create new survey - access state directly
+    state._surveys.get(state._surveyCount).id = state._surveyCount + 1;
+    state._surveys.get(state._surveyCount).creator = qpi.invocator();
+    state._surveys.get(state._surveyCount).rewardAmount = input.rewardPool;
+    state._surveys.get(state._surveyCount).maxRespondents =
+        input.maxRespondents;
+    state._surveys.get(state._surveyCount).rewardPerRespondent =
         QPI::div(input.rewardPool, (uint64)input.maxRespondents);
-    newSurvey.currentRespondents = 0;
-    newSurvey.balance = input.rewardPool;
-    newSurvey.isActive = 1;
+    state._surveys.get(state._surveyCount).balance = input.rewardPool;
+    state._surveys.get(state._surveyCount).isActive = 1;
 
     // Copy IPFS hash using Array's set method
     for (locals.i = 0; locals.i < IPFS_HASH_SIZE; locals.i++) {
-      newSurvey.ipfsHash.set(locals.i, input.ipfsHash.get(locals.i));
+      state._surveys.get(state._surveyCount)
+          .ipfsHash.set(locals.i, input.ipfsHash.get(locals.i));
     }
 
-    output.surveyId = newSurvey.id;
+    output.surveyId = state._surveyCount + 1;
     output.success = 1;
     state._surveyCount++;
   }
 
   PUBLIC_PROCEDURE_WITH_LOCALS(payout) {
-    output.success = 0;
-    output.amountPaid = 0;
-    output.bonusPaid = 0;
-    output.referralPaid = 0;
-
     // Security: Oracle-only execution
     if (qpi.invocator() != state._oracleAddress) {
       return;
     }
 
-    // Find survey by ID
-    locals.index = -1;
+    // Find survey by ID using found flag pattern
     for (locals.i = 0; locals.i < state._surveyCount; locals.i++) {
       if (state._surveys.get(locals.i).id == input.surveyId) {
-        locals.index = (sint32)locals.i;
+        locals.index = locals.i;
+        locals.found = 1;
         break;
       }
     }
 
-    if (locals.index < 0) {
+    if (!locals.found) {
       return;
     }
 
-    Survey &s = state._surveys.get((uint32)locals.index);
-
-    // Validation checks
-    if (!s.isActive) {
+    // Validation checks - access state directly
+    if (!state._surveys.get(locals.index).isActive) {
       return;
     }
-    if (s.currentRespondents >= s.maxRespondents) {
+    if (state._surveys.get(locals.index).currentRespondents >=
+        state._surveys.get(locals.index).maxRespondents) {
       return;
     }
-    if (s.balance < s.rewardPerRespondent) {
+    if (state._surveys.get(locals.index).balance <
+        state._surveys.get(locals.index).rewardPerRespondent) {
       return;
     }
 
     // Calculate reward splits using QPI::div (no / operator allowed)
-    locals.totalReward = s.rewardPerRespondent;
+    locals.totalReward = state._surveys.get(locals.index).rewardPerRespondent;
     locals.baseReward =
         QPI::div(locals.totalReward * BASE_REWARD_PERCENT, 100ULL);
     locals.referralReward =
@@ -243,7 +235,6 @@ public:
         QPI::div(locals.totalReward * PLATFORM_FEE_PERCENT, 100ULL);
 
     // Staking bonus tier system
-    locals.bonus = 0;
     if (input.respondentTier == 1) {
       locals.bonus = QPI::div(locals.baseReward * 5, 100ULL);
     } else if (input.respondentTier == 2) {
@@ -263,12 +254,14 @@ public:
 
     qpi.transfer(state._oracleAddress, locals.platformFee);
 
-    // Update state
-    s.balance = s.balance - locals.totalReward;
-    s.currentRespondents++;
+    // Update state - access directly
+    state._surveys.get(locals.index).balance =
+        state._surveys.get(locals.index).balance - locals.totalReward;
+    state._surveys.get(locals.index).currentRespondents++;
 
-    if (s.currentRespondents >= s.maxRespondents) {
-      s.isActive = 0;
+    if (state._surveys.get(locals.index).currentRespondents >=
+        state._surveys.get(locals.index).maxRespondents) {
+      state._surveys.get(locals.index).isActive = 0;
     }
 
     output.success = 1;
@@ -278,8 +271,6 @@ public:
   }
 
   PUBLIC_PROCEDURE(setOracle) {
-    output.success = 0;
-
     // Only allow setting oracle if not already set, or by current oracle
     if (state._oracleAddress == NULL_ID ||
         qpi.invocator() == state._oracleAddress) {
@@ -293,27 +284,18 @@ public:
   // ============================================
 
   PUBLIC_FUNCTION_WITH_LOCALS(getSurvey) {
-    output.found = 0;
-    output.id = 0;
-    output.creator = NULL_ID;
-    output.rewardAmount = 0;
-    output.rewardPerRespondent = 0;
-    output.maxRespondents = 0;
-    output.currentRespondents = 0;
-    output.balance = 0;
-    output.isActive = 0;
-
     for (locals.i = 0; locals.i < state._surveyCount; locals.i++) {
-      const Survey &s = state._surveys.get(locals.i);
-      if (s.id == input.surveyId) {
-        output.id = s.id;
-        output.creator = s.creator;
-        output.rewardAmount = s.rewardAmount;
-        output.rewardPerRespondent = s.rewardPerRespondent;
-        output.maxRespondents = s.maxRespondents;
-        output.currentRespondents = s.currentRespondents;
-        output.balance = s.balance;
-        output.isActive = s.isActive;
+      if (state._surveys.get(locals.i).id == input.surveyId) {
+        output.id = state._surveys.get(locals.i).id;
+        output.creator = state._surveys.get(locals.i).creator;
+        output.rewardAmount = state._surveys.get(locals.i).rewardAmount;
+        output.rewardPerRespondent =
+            state._surveys.get(locals.i).rewardPerRespondent;
+        output.maxRespondents = state._surveys.get(locals.i).maxRespondents;
+        output.currentRespondents =
+            state._surveys.get(locals.i).currentRespondents;
+        output.balance = state._surveys.get(locals.i).balance;
+        output.isActive = state._surveys.get(locals.i).isActive;
         output.found = 1;
         return;
       }
