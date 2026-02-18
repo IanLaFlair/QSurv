@@ -70,9 +70,8 @@ using namespace QPI;
 // Decentralized survey creation with escrow and AI-verified payouts
 // ============================================
 
-struct QSURV2 {}; // Forward declaration for state expansion
-
-struct QSURV : public ContractBase {
+struct QSURV : public ContractBase
+{
   // ============================================
   // CONSTANTS
   // ============================================
@@ -85,7 +84,8 @@ struct QSURV : public ContractBase {
   // ============================================
   // STRUCTS
   // ============================================
-  struct Survey {
+  struct Survey
+  {
     uint64 id;
     id creator;
     uint64 rewardAmount;
@@ -109,51 +109,71 @@ protected:
   // SYSTEM PROCEDURES
   // ============================================
 public:
-  INITIALIZE() {
+  INITIALIZE()
+  {
     // State is automatically reset before INITIALIZE() is called
+    // No initialization needed - state fields start at zero
   }
 
-  BEGIN_EPOCH() {}
-  END_EPOCH() {}
-  BEGIN_TICK() {}
-  END_TICK() {}
+  BEGIN_EPOCH()
+  {
+  }
+
+  END_EPOCH()
+  {
+  }
+
+  BEGIN_TICK()
+  {
+  }
+
+  END_TICK()
+  {
+  }
 
   // ============================================
   // INPUT/OUTPUT STRUCTS
   // ============================================
 
   // --- CreateSurvey ---
-  struct createSurvey_input {
+  struct createSurvey_input
+  {
     uint64 rewardPool;
     uint32 maxRespondents;
     Array<uint8, 64> ipfsHash;
   };
 
-  struct createSurvey_output {
+  struct createSurvey_output
+  {
     uint64 surveyId;
     bit success;
   };
 
-  struct createSurvey_locals {
+  struct createSurvey_locals
+  {
     uint32 i;
+    Survey tempSurvey;
   };
 
   // --- Payout ---
-  struct payout_input {
+  struct payout_input
+  {
     uint64 surveyId;
     id respondentAddress;
     id referrerAddress;
     uint8 respondentTier;
   };
 
-  struct payout_output {
+  struct payout_output
+  {
     uint64 amountPaid;
     uint64 bonusPaid;
     uint64 referralPaid;
     bit success;
   };
 
-  struct payout_locals {
+  struct payout_locals
+  {
     uint32 index;
     bit found;
     uint64 totalReward;
@@ -162,11 +182,17 @@ public:
     uint64 platformFee;
     uint64 bonus;
     uint32 i;
+    Survey tempSurvey;
   };
 
   // --- GetSurvey (Read-only) ---
-  struct getSurvey_input { uint64 surveyId; };
-  struct getSurvey_output {
+  struct getSurvey_input
+  {
+    uint64 surveyId;
+  };
+
+  struct getSurvey_output
+  {
     uint64 id;
     id creator;
     uint64 rewardAmount;
@@ -177,90 +203,172 @@ public:
     bit isActive;
     bit found;
   };
-  struct getSurvey_locals { uint32 i; };
+
+  struct getSurvey_locals
+  {
+    uint32 i;
+  };
+
+  // --- GetSurveyCount (Read-only) ---
+  struct getSurveyCount_input
+  {
+  };
+
+  struct getSurveyCount_output
+  {
+    uint32 count;
+  };
 
   // --- SetOracle (Admin) ---
-  struct setOracle_input { id newOracleAddress; };
-  struct setOracle_output { bit success; };
+  struct setOracle_input
+  {
+    id newOracleAddress;
+  };
+
+  struct setOracle_output
+  {
+    bit success;
+  };
 
   // ============================================
   // USER PROCEDURES (State-Modifying)
   // ============================================
 
-  PUBLIC_PROCEDURE_WITH_LOCALS(createSurvey) {
-    if (state._surveyCount >= MAX_SURVEYS) return;
-    if (input.maxRespondents == 0) return;
-    if (input.rewardPool == 0) return;
-    if (qpi.invocationReward() < input.rewardPool) return;
-
-    // Create new survey - access state directly
-    state._surveys.get(state._surveyCount).id = state._surveyCount + 1;
-    state._surveys.get(state._surveyCount).creator = qpi.invocator();
-    state._surveys.get(state._surveyCount).rewardAmount = input.rewardPool;
-    state._surveys.get(state._surveyCount).maxRespondents = input.maxRespondents;
-    state._surveys.get(state._surveyCount).rewardPerRespondent =
-        QPI::div(input.rewardPool, (uint64)input.maxRespondents);
-    state._surveys.get(state._surveyCount).balance = input.rewardPool;
-    state._surveys.get(state._surveyCount).isActive = 1;
-
-    for (locals.i = 0; locals.i < IPFS_HASH_SIZE; locals.i++) {
-      state._surveys.get(state._surveyCount).ipfsHash.set(locals.i, input.ipfsHash.get(locals.i));
+  PUBLIC_PROCEDURE_WITH_LOCALS(createSurvey)
+  {
+    // Validation checks
+    if (state._surveyCount >= MAX_SURVEYS)
+    {
+      return;
     }
+    if (input.maxRespondents == 0)
+    {
+      return;
+    }
+    if (input.rewardPool == 0)
+    {
+      return;
+    }
+
+    // Verify invocation reward matches rewardPool
+    if (qpi.invocationReward() < input.rewardPool)
+    {
+      return;
+    }
+
+    // Create new survey - access state directly via copy pattern
+    locals.tempSurvey.id = state._surveyCount + 1;
+    locals.tempSurvey.creator = qpi.invocator();
+    locals.tempSurvey.rewardAmount = input.rewardPool;
+    locals.tempSurvey.maxRespondents = input.maxRespondents;
+    locals.tempSurvey.rewardPerRespondent =
+        QPI::div(input.rewardPool, (uint64)input.maxRespondents);
+    locals.tempSurvey.balance = input.rewardPool;
+    locals.tempSurvey.isActive = 1;
+
+    // Copy IPFS hash using Array's set method
+    for (locals.i = 0; locals.i < IPFS_HASH_SIZE; locals.i++)
+    {
+      locals.tempSurvey.ipfsHash.set(locals.i, input.ipfsHash.get(locals.i));
+    }
+
+    // Commit state changes
+    state._surveys.set(state._surveyCount, locals.tempSurvey);
 
     output.surveyId = state._surveyCount + 1;
     output.success = 1;
     state._surveyCount++;
   }
 
-  PUBLIC_PROCEDURE_WITH_LOCALS(payout) {
+  PUBLIC_PROCEDURE_WITH_LOCALS(payout)
+  {
     // Security: Oracle-only execution
-    if (qpi.invocator() != state._oracleAddress) return;
+    if (qpi.invocator() != state._oracleAddress)
+    {
+      return;
+    }
 
     // Find survey by ID using found flag pattern
-    for (locals.i = 0; locals.i < state._surveyCount; locals.i++) {
-      if (state._surveys.get(locals.i).id == input.surveyId) {
+    for (locals.i = 0; locals.i < state._surveyCount; locals.i++)
+    {
+      if (state._surveys.get(locals.i).id == input.surveyId)
+      {
         locals.index = locals.i;
         locals.found = 1;
         break;
       }
     }
-    if (!locals.found) return;
 
-    // Validation checks - access state directly
-    if (!state._surveys.get(locals.index).isActive) return;
-    if (state._surveys.get(locals.index).currentRespondents >= 
-        state._surveys.get(locals.index).maxRespondents) return;
-    if (state._surveys.get(locals.index).balance < 
-        state._surveys.get(locals.index).rewardPerRespondent) return;
+    if (!locals.found)
+    {
+      return;
+    }
 
-    // Calculate reward splits
-    locals.totalReward = state._surveys.get(locals.index).rewardPerRespondent;
-    locals.baseReward = QPI::div(locals.totalReward * BASE_REWARD_PERCENT, 100ULL);
-    locals.referralReward = QPI::div(locals.totalReward * REFERRAL_REWARD_PERCENT, 100ULL);
-    locals.platformFee = QPI::div(locals.totalReward * PLATFORM_FEE_PERCENT, 100ULL);
+    // Copy state to local variable for reading and modification
+    locals.tempSurvey = state._surveys.get(locals.index);
+
+    // Validation checks
+    if (!locals.tempSurvey.isActive)
+    {
+      return;
+    }
+    if (locals.tempSurvey.currentRespondents >= locals.tempSurvey.maxRespondents)
+    {
+      return;
+    }
+    if (locals.tempSurvey.balance < locals.tempSurvey.rewardPerRespondent)
+    {
+      return;
+    }
+
+    // Calculate reward splits using QPI::div (no / operator allowed)
+    locals.totalReward = locals.tempSurvey.rewardPerRespondent;
+    locals.baseReward =
+        QPI::div(locals.totalReward * BASE_REWARD_PERCENT, 100ULL);
+    locals.referralReward =
+        QPI::div(locals.totalReward * REFERRAL_REWARD_PERCENT, 100ULL);
+    locals.platformFee =
+        QPI::div(locals.totalReward * PLATFORM_FEE_PERCENT, 100ULL);
 
     // Staking bonus tier system
-    if (input.respondentTier == 1) locals.bonus = QPI::div(locals.baseReward * 5, 100ULL);
-    else if (input.respondentTier == 2) locals.bonus = QPI::div(locals.baseReward * 10, 100ULL);
-    else if (input.respondentTier == 3) locals.bonus = QPI::div(locals.baseReward * 25, 100ULL);
+    if (input.respondentTier == 1)
+    {
+      locals.bonus = QPI::div(locals.baseReward * 5, 100ULL);
+    }
+    else if (input.respondentTier == 2)
+    {
+      locals.bonus = QPI::div(locals.baseReward * 10, 100ULL);
+    }
+    else if (input.respondentTier == 3)
+    {
+      locals.bonus = QPI::div(locals.baseReward * 25, 100ULL);
+    }
 
     // Execute fund transfers
     qpi.transfer(input.respondentAddress, locals.baseReward + locals.bonus);
-    if (input.referrerAddress != NULL_ID) {
+
+    if (input.referrerAddress != NULL_ID)
+    {
       qpi.transfer(input.referrerAddress, locals.referralReward);
-    } else {
+    }
+    else
+    {
       qpi.transfer(state._oracleAddress, locals.referralReward);
     }
+
     qpi.transfer(state._oracleAddress, locals.platformFee);
 
-    // Update state - access directly
-    state._surveys.get(locals.index).balance = 
-        state._surveys.get(locals.index).balance - locals.totalReward;
-    state._surveys.get(locals.index).currentRespondents++;
-    if (state._surveys.get(locals.index).currentRespondents >= 
-        state._surveys.get(locals.index).maxRespondents) {
-      state._surveys.get(locals.index).isActive = 0;
+    // Update state in local variable
+    locals.tempSurvey.balance = locals.tempSurvey.balance - locals.totalReward;
+    locals.tempSurvey.currentRespondents++;
+
+    if (locals.tempSurvey.currentRespondents >= locals.tempSurvey.maxRespondents)
+    {
+      locals.tempSurvey.isActive = 0;
     }
+
+    // Commit modifications back to state
+    state._surveys.set(locals.index, locals.tempSurvey);
 
     output.success = 1;
     output.amountPaid = locals.baseReward;
@@ -268,8 +376,12 @@ public:
     output.referralPaid = locals.referralReward;
   }
 
-  PUBLIC_PROCEDURE(setOracle) {
-    if (state._oracleAddress == NULL_ID || qpi.invocator() == state._oracleAddress) {
+  PUBLIC_PROCEDURE(setOracle)
+  {
+    // Only allow setting oracle if not already set, or by current oracle
+    if (state._oracleAddress == NULL_ID ||
+        qpi.invocator() == state._oracleAddress)
+    {
       state._oracleAddress = input.newOracleAddress;
       output.success = 1;
     }
@@ -279,9 +391,13 @@ public:
   // USER FUNCTIONS (Read-Only)
   // ============================================
 
-  PUBLIC_FUNCTION_WITH_LOCALS(getSurvey) {
-    for (locals.i = 0; locals.i < state._surveyCount; locals.i++) {
-      if (state._surveys.get(locals.i).id == input.surveyId) {
+  PUBLIC_FUNCTION_WITH_LOCALS(getSurvey)
+  {
+    for (locals.i = 0; locals.i < state._surveyCount; locals.i++)
+    {
+      // No need to copy for read-only access, direct get() is fine
+      if (state._surveys.get(locals.i).id == input.surveyId)
+      {
         output.id = state._surveys.get(locals.i).id;
         output.creator = state._surveys.get(locals.i).creator;
         output.rewardAmount = state._surveys.get(locals.i).rewardAmount;
@@ -296,14 +412,21 @@ public:
     }
   }
 
-  PUBLIC_FUNCTION(getSurveyCount) { output.count = state._surveyCount; }
+  PUBLIC_FUNCTION(getSurveyCount)
+  {
+    output.count = state._surveyCount;
+  }
 
   // ============================================
   // REGISTER USER FUNCTIONS AND PROCEDURES
   // ============================================
-  REGISTER_USER_FUNCTIONS_AND_PROCEDURES() {
+  REGISTER_USER_FUNCTIONS_AND_PROCEDURES()
+  {
+    // Functions (Read-only queries)
     REGISTER_USER_FUNCTION(getSurvey, 1);
     REGISTER_USER_FUNCTION(getSurveyCount, 2);
+
+    // Procedures (State-modifying)
     REGISTER_USER_PROCEDURE(createSurvey, 1);
     REGISTER_USER_PROCEDURE(payout, 2);
     REGISTER_USER_PROCEDURE(setOracle, 3);

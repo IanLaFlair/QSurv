@@ -85,6 +85,7 @@ public:
 
   struct createSurvey_locals {
     uint32 i;
+    Survey tempSurvey;
   };
 
   // --- Payout ---
@@ -111,6 +112,7 @@ public:
     uint64 platformFee;
     uint64 bonus;
     uint32 i;
+    Survey tempSurvey;
   };
 
   // --- GetSurvey (Read-only) ---
@@ -171,22 +173,23 @@ public:
       return;
     }
 
-    // Create new survey - access state directly
-    state._surveys.get(state._surveyCount).id = state._surveyCount + 1;
-    state._surveys.get(state._surveyCount).creator = qpi.invocator();
-    state._surveys.get(state._surveyCount).rewardAmount = input.rewardPool;
-    state._surveys.get(state._surveyCount).maxRespondents =
-        input.maxRespondents;
-    state._surveys.get(state._surveyCount).rewardPerRespondent =
+    // Create new survey - access state directly via copy pattern
+    locals.tempSurvey.id = state._surveyCount + 1;
+    locals.tempSurvey.creator = qpi.invocator();
+    locals.tempSurvey.rewardAmount = input.rewardPool;
+    locals.tempSurvey.maxRespondents = input.maxRespondents;
+    locals.tempSurvey.rewardPerRespondent =
         QPI::div(input.rewardPool, (uint64)input.maxRespondents);
-    state._surveys.get(state._surveyCount).balance = input.rewardPool;
-    state._surveys.get(state._surveyCount).isActive = 1;
+    locals.tempSurvey.balance = input.rewardPool;
+    locals.tempSurvey.isActive = 1;
 
     // Copy IPFS hash using Array's set method
     for (locals.i = 0; locals.i < IPFS_HASH_SIZE; locals.i++) {
-      state._surveys.get(state._surveyCount)
-          .ipfsHash.set(locals.i, input.ipfsHash.get(locals.i));
+      locals.tempSurvey.ipfsHash.set(locals.i, input.ipfsHash.get(locals.i));
     }
+
+    // Commit state changes
+    state._surveys.set(state._surveyCount, locals.tempSurvey);
 
     output.surveyId = state._surveyCount + 1;
     output.success = 1;
@@ -212,21 +215,23 @@ public:
       return;
     }
 
-    // Validation checks - access state directly
-    if (!state._surveys.get(locals.index).isActive) {
+    // Copy state to local variable for reading and modification
+    locals.tempSurvey = state._surveys.get(locals.index);
+
+    // Validation checks
+    if (!locals.tempSurvey.isActive) {
       return;
     }
-    if (state._surveys.get(locals.index).currentRespondents >=
-        state._surveys.get(locals.index).maxRespondents) {
+    if (locals.tempSurvey.currentRespondents >=
+        locals.tempSurvey.maxRespondents) {
       return;
     }
-    if (state._surveys.get(locals.index).balance <
-        state._surveys.get(locals.index).rewardPerRespondent) {
+    if (locals.tempSurvey.balance < locals.tempSurvey.rewardPerRespondent) {
       return;
     }
 
     // Calculate reward splits using QPI::div (no / operator allowed)
-    locals.totalReward = state._surveys.get(locals.index).rewardPerRespondent;
+    locals.totalReward = locals.tempSurvey.rewardPerRespondent;
     locals.baseReward =
         QPI::div(locals.totalReward * BASE_REWARD_PERCENT, 100ULL);
     locals.referralReward =
@@ -254,15 +259,17 @@ public:
 
     qpi.transfer(state._oracleAddress, locals.platformFee);
 
-    // Update state - access directly
-    state._surveys.get(locals.index).balance =
-        state._surveys.get(locals.index).balance - locals.totalReward;
-    state._surveys.get(locals.index).currentRespondents++;
+    // Update state in local variable
+    locals.tempSurvey.balance = locals.tempSurvey.balance - locals.totalReward;
+    locals.tempSurvey.currentRespondents++;
 
-    if (state._surveys.get(locals.index).currentRespondents >=
-        state._surveys.get(locals.index).maxRespondents) {
-      state._surveys.get(locals.index).isActive = 0;
+    if (locals.tempSurvey.currentRespondents >=
+        locals.tempSurvey.maxRespondents) {
+      locals.tempSurvey.isActive = 0;
     }
+
+    // Commit modifications back to state
+    state._surveys.set(locals.index, locals.tempSurvey);
 
     output.success = 1;
     output.amountPaid = locals.baseReward;
@@ -285,6 +292,7 @@ public:
 
   PUBLIC_FUNCTION_WITH_LOCALS(getSurvey) {
     for (locals.i = 0; locals.i < state._surveyCount; locals.i++) {
+      // No need to copy for read-only access, direct get() is fine
       if (state._surveys.get(locals.i).id == input.surveyId) {
         output.id = state._surveys.get(locals.i).id;
         output.creator = state._surveys.get(locals.i).creator;
